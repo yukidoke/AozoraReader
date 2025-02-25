@@ -5,13 +5,11 @@ from bs4 import BeautifulSoup
 import re
 import subprocess
 import time
-import threading
-from tqdm import tqdm
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit, 
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
                             QProgressBar, QFileDialog, QMessageBox)
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
 class AozoraSeikaTalker:
     def __init__(self, seika_path="C:/Program Files/510Product/AssistantSeika"):
