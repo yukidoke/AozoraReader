@@ -22,9 +22,10 @@ class AozoraSeikaTalker:
             AssistantSeikaのインストールパス
         """
         self.seika_path = seika_path
-        self.seika_console = os.path.join(seika_path, "SeikaCMD.exe")
+        self.seika_console = os.path.join(seika_path, "SeikaSay2.exe")
         self.is_reading = False
         self.pause_reading = False
+        self.voice_dic = {}
         
     def get_aozora_text(self, url):
         """
@@ -150,8 +151,7 @@ class AozoraSeikaTalker:
         """
         cmd = [
             self.seika_console,
-            "-cid", "0",  # チャンネルID
-            "-voice", voice_name,
+            "-cid", self.voice_dic[voice_name],  # チャンネルID
             "-t", text.replace('\n', ' ')  # 改行をスペースに置換
         ]
         
@@ -174,14 +174,21 @@ class AozoraSeikaTalker:
             self.seika_console,
             "-list"
         ]
-        
+
+        # talker = re.compile(r'\s*(\d+)\s+(.+?)\s+-\s+(.+)\s*')
+        talker = re.compile(r'\s*(\d+)\s+(.+?)\s*')
+
         try:
             result = subprocess.run(cmd, capture_output=True, text=True, check=True)
             voices = []
+            self.voice_dic = {}
             for line in result.stdout.splitlines():
-                if "- CID:" in line:
-                    voice_name = line.split(":", 2)[-1].strip()
+                print(line)
+                m = talker.fullmatch(line)
+                if not m == None:
+                    voice_name = m.group(2)
                     voices.append(voice_name)
+                    self.voice_dic[m.group(2)] = m.group(1)
             return voices
         except:
             # エラーが発生した場合、デフォルトの声リストを返す
@@ -384,7 +391,7 @@ class AozoraReaderGUI(QMainWindow):
         
     def update_seika_path(self):
         self.talker.seika_path = self.seika_path.text()
-        self.talker.seika_console = os.path.join(self.talker.seika_path, "SeikaCMD.exe")
+        self.talker.seika_console = os.path.join(self.talker.seika_path, "SeikaSay2.exe")
         
     def update_voice_list(self):
         current_voice = self.voice_combo.currentText()
