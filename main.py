@@ -207,7 +207,10 @@ class ReaderWorker(QThread):
         self.chunks = text_chunks
         self.voice_name = voice_name
         self.current_chunk = 0
-        
+
+    def set_voice(self, voice_name):
+        self.voice_name = voice_name
+
     def run(self):
         self.talker.is_reading = True
         chunk_count = len(self.chunks)
@@ -301,6 +304,7 @@ class AozoraReaderGUI(QMainWindow):
         voice_layout = QHBoxLayout()
         voice_label = QLabel('音声:')
         self.voice_combo = QComboBox()
+        self.voice_combo.currentTextChanged.connect(self.on_voice_changed)
         
         # AssistantSeikaのパスを設定
         seika_layout = QHBoxLayout()
@@ -527,6 +531,11 @@ class AozoraReaderGUI(QMainWindow):
     def on_reading_error(self, error_message):
         QMessageBox.critical(self, "エラー", error_message)
         self.on_reading_finished()
+
+    @pyqtSlot(str)
+    def on_voice_changed(self, text):
+        if not self.reader_worker == None:
+            self.reader_worker.set_voice(text)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
