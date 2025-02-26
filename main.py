@@ -1,3 +1,4 @@
+import json
 import sys
 import os
 import requests
@@ -329,13 +330,24 @@ class AozoraReaderGUI(QMainWindow):
         voice_layout.addWidget(self.voice_combo)
         voice_layout.addWidget(chunk_label)
         voice_layout.addWidget(self.chunk_size)
+
+        # 設定の保存・読み込み
+        save_layout = QHBoxLayout()
+        self.save_filename = 'config.json'
+        self.config_save = QPushButton('設定を保存')
+        self.config_save.clicked.connect(self.save_config)
+        save_layout.addWidget(self.config_save)
+        self.config_load = QPushButton('設定を読み込み')
+        self.config_load.clicked.connect(self.load_config)
+        save_layout.addWidget(self.config_load)
         
         input_layout.addLayout(url_layout)
         input_layout.addLayout(file_layout)
         input_layout.addLayout(seika_layout)
         input_layout.addLayout(voice_layout)
+        input_layout.addLayout(save_layout)
         input_group.setLayout(input_layout)
-        
+
         # テキスト表示セクション
         text_group = QGroupBox('テキスト内容')
         text_layout = QVBoxLayout()
@@ -440,6 +452,27 @@ class AozoraReaderGUI(QMainWindow):
         self.fetch_worker.fetch_completed.connect(self.on_fetch_completed)
         self.fetch_worker.fetch_error.connect(self.on_fetch_error)
         self.fetch_worker.start()
+
+    def save_config(self):
+        data = {
+            "url": self.url_input.text(),
+            "file_path": self.file_path.text(),
+            "seika_path": self.seika_path.text(),
+            "chunk_size": self.chunk_size.value()
+        }
+        with open(self.save_filename, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+
+    def load_config(self):
+        try:
+            with open(self.save_filename, "r", encoding="utf-8") as f:
+                conf = json.load(f)
+                self.url_input.setText(conf['url'])
+                self.file_path.setText(conf['file_path'])
+                self.seika_path.setText(conf['seika_path'])
+                self.chunk_size.setValue(conf['chunk_size'])
+        except:
+            QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         
     @pyqtSlot(str, str, str)
     def on_fetch_completed(self, text, title, author):
