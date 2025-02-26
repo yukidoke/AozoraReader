@@ -305,6 +305,7 @@ class AozoraReaderGUI(QMainWindow):
         voice_label = QLabel('音声:')
         self.voice_combo = QComboBox()
         self.voice_combo.currentTextChanged.connect(self.on_voice_changed)
+        self.voice_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         
         # AssistantSeikaのパスを設定
         seika_layout = QHBoxLayout()
