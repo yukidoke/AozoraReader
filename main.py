@@ -476,7 +476,12 @@ class AozoraReaderGUI(QMainWindow):
         if self.reader_worker and self.reader_worker.isRunning():
             self.reader_worker.terminate()
             self.reader_worker.wait()
-            
+
+        # チャンク設定を適用
+        text = self.full_text
+        chunk_size = self.chunk_size.value()
+        self.text_chunks = self.talker.split_text_into_chunks(text, chunk_size)
+
         # 新しいワーカーを作成して開始
         self.reader_worker = ReaderWorker(self.talker, self.text_chunks, voice_name)
         self.reader_worker.progress_updated.connect(self.update_progress)
