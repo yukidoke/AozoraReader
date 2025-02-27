@@ -391,7 +391,7 @@ class AozoraReaderGUI(QMainWindow):
 
         # 設定の保存・読み込み
         save_layout = QHBoxLayout()
-        self.save_filename = 'config.json'
+        self.save_filename = os.path.join(os.path.dirname(sys.argv[0]),'config.json')
         self.config_save = QPushButton('設定を保存')
         self.config_save.clicked.connect(self.save_config)
         save_layout.addWidget(self.config_save)
