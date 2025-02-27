@@ -9,7 +9,8 @@ import time
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit, 
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
-                            QProgressBar, QFileDialog, QMessageBox)
+                            QProgressBar, QFileDialog, QMessageBox,
+                            QSlider)
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
 class AozoraSeikaTalker:
@@ -27,6 +28,7 @@ class AozoraSeikaTalker:
         self.is_reading = False
         self.pause_reading = False
         self.voice_dic = {}
+        self.talk_speed = 1.0
         
     def get_aozora_text(self, url):
         """
@@ -82,6 +84,9 @@ class AozoraSeikaTalker:
             
         except Exception as e:
             return None, "エラー", str(e)
+        
+    def set_speed(self, speed):
+        self.talk_speed = speed
     
     def split_text_into_chunks(self, text, chunk_size=200):
         """
@@ -150,13 +155,16 @@ class AozoraSeikaTalker:
         pause_duration : float
             読み上げ間の一時停止の秒数
         """
+
         cmd = [
             self.seika_console,
             "-cid", self.voice_dic[voice_name],  # チャンネルID
+            "-speed", str(self.talk_speed),
             "-t", text.replace('\n', ' ')  # 改行をスペースに置換
         ]
-        
+
         try:
+            print(self.talk_speed)
             subprocess.run(cmd, check=True)
             time.sleep(pause_duration)  # 読み上げ間の間隔
             return True
@@ -194,6 +202,24 @@ class AozoraSeikaTalker:
         except:
             # エラーが発生した場合、デフォルトの声リストを返す
             return ["結月ゆかり", "琴葉茜", "琴葉葵", "東北きりたん", "京町セイカ"]
+
+    def get_voice_speed(self, voice_name):
+        if voice_name in self.voice_dic:
+            cmd = [
+                self.seika_console,
+                "-cid", self.voice_dic[voice_name],
+                "-params"
+            ]
+
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                for line in result.stdout.splitlines():
+                    m = re.fullmatch(r'effect\s*:\s*speed\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
+                    if not m == None:
+                        return float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
+            except:
+                return None, None, None, None
+        return None, None, None, None
 
 # 読み上げ処理を行うワーカースレッド
 class ReaderWorker(QThread):
@@ -330,6 +356,17 @@ class AozoraReaderGUI(QMainWindow):
         voice_layout.addWidget(self.voice_combo)
         voice_layout.addWidget(chunk_label)
         voice_layout.addWidget(self.chunk_size)
+
+        # 速度設定
+        speed_label = QLabel('読み上げ速度:')
+        self.talk_speed = QSlider()
+        self.talk_speed.setOrientation(1)
+        self.speed_step = 1
+        self.talk_speed.setRange(1, 1)
+        self.talk_speed.setValue(1)
+        self.talk_speed.valueChanged.connect(self.on_update_speed)
+        voice_layout.addWidget(speed_label)
+        voice_layout.addWidget(self.talk_speed)
 
         # 設定の保存・読み込み
         save_layout = QHBoxLayout()
@@ -575,6 +612,18 @@ class AozoraReaderGUI(QMainWindow):
     def on_voice_changed(self, text):
         if not self.reader_worker == None:
             self.reader_worker.set_voice(text)
+        if not self.talker == None:
+            dflt, vmin, vmax, step = self.talker.get_voice_speed(text)
+            if not dflt == None:
+                scale = 1 / step
+                self.speed_step = scale
+                self.talk_speed.setRange(int(vmin * scale), int(vmax * scale))
+                self.talk_speed.setValue(int(dflt * scale))
+                self.talker.set_speed(dflt)
+
+    def on_update_speed(self):
+        if not self.talker == None:
+            self.talker.set_speed(float(self.talk_speed.value()) / self.speed_step)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
