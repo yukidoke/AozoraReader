@@ -29,6 +29,7 @@ class AozoraSeikaTalker:
         self.pause_reading = False
         self.voice_dic = {}
         self.talk_speed = 1.0
+        self.talk_volume = 1.0
         
     def get_aozora_text(self, url):
         """
@@ -87,6 +88,9 @@ class AozoraSeikaTalker:
         
     def set_speed(self, speed):
         self.talk_speed = speed
+
+    def set_volume(self, volume):
+        self.talk_volume = volume
     
     def split_text_into_chunks(self, text, chunk_size=200):
         """
@@ -160,11 +164,11 @@ class AozoraSeikaTalker:
             self.seika_console,
             "-cid", self.voice_dic[voice_name],  # チャンネルID
             "-speed", str(self.talk_speed),
+            "-volume", str(self.talk_volume),
             "-t", text.replace('\n', ' ')  # 改行をスペースに置換
         ]
 
         try:
-            print(self.talk_speed)
             subprocess.run(cmd, check=True)
             time.sleep(pause_duration)  # 読み上げ間の間隔
             return True
@@ -215,6 +219,24 @@ class AozoraSeikaTalker:
                 result = subprocess.run(cmd, capture_output=True, text=True, check=True)
                 for line in result.stdout.splitlines():
                     m = re.fullmatch(r'effect\s*:\s*speed\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
+                    if not m == None:
+                        return float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
+            except:
+                return None, None, None, None
+        return None, None, None, None
+    
+    def get_voice_volume(self, voice_name):
+        if voice_name in self.voice_dic:
+            cmd = [
+                self.seika_console,
+                "-cid", self.voice_dic[voice_name],
+                "-params"
+            ]
+
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+                for line in result.stdout.splitlines():
+                    m = re.fullmatch(r'effect\s*:\s*volume\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
                     if not m == None:
                         return float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
             except:
@@ -357,17 +379,6 @@ class AozoraReaderGUI(QMainWindow):
         voice_layout.addWidget(chunk_label)
         voice_layout.addWidget(self.chunk_size)
 
-        # 速度設定
-        speed_label = QLabel('読み上げ速度:')
-        self.talk_speed = QSlider()
-        self.talk_speed.setOrientation(1)
-        self.speed_step = 1
-        self.talk_speed.setRange(1, 1)
-        self.talk_speed.setValue(1)
-        self.talk_speed.valueChanged.connect(self.on_update_speed)
-        voice_layout.addWidget(speed_label)
-        voice_layout.addWidget(self.talk_speed)
-
         # 設定の保存・読み込み
         save_layout = QHBoxLayout()
         self.save_filename = 'config.json'
@@ -377,12 +388,36 @@ class AozoraReaderGUI(QMainWindow):
         self.config_load = QPushButton('設定を読み込み')
         self.config_load.clicked.connect(self.load_config)
         save_layout.addWidget(self.config_load)
+
+        # 速度設定
+        params_layout = QHBoxLayout()
+        self.speed_label = QLabel('話速:')
+        self.talk_speed = QSlider()
+        self.talk_speed.setOrientation(1)
+        self.speed_step = 1
+        self.talk_speed.setRange(1, 1)
+        self.talk_speed.setValue(1)
+        self.talk_speed.valueChanged.connect(self.on_update_speed)
+        params_layout.addWidget(self.speed_label)
+        params_layout.addWidget(self.talk_speed)
+
+        # 音量設定
+        self.volume_label = QLabel('音量:')
+        self.volume = QSlider()
+        self.volume.setOrientation(1)
+        self.volume_step = 1
+        self.volume.setRange(1, 1)
+        self.volume.setValue(1)
+        self.volume.valueChanged.connect(self.on_update_volume)
+        params_layout.addWidget(self.volume_label)
+        params_layout.addWidget(self.volume)
         
         input_layout.addLayout(url_layout)
         input_layout.addLayout(file_layout)
         input_layout.addLayout(seika_layout)
         input_layout.addLayout(voice_layout)
         input_layout.addLayout(save_layout)
+        input_layout.addLayout(params_layout)
         input_group.setLayout(input_layout)
 
         # テキスト表示セクション
@@ -620,10 +655,26 @@ class AozoraReaderGUI(QMainWindow):
                 self.talk_speed.setRange(int(vmin * scale), int(vmax * scale))
                 self.talk_speed.setValue(int(dflt * scale))
                 self.talker.set_speed(dflt)
+            dflt, vmin, vmax, step = self.talker.get_voice_volume(text)
+            if not dflt == None:
+                scale = 1 / step
+                self.volume_step = scale
+                self.volume.setRange(int(vmin * scale), int(vmax * scale))
+                self.volume.setValue(int(dflt * scale))
+                self.talker.set_volume(dflt)
 
     def on_update_speed(self):
         if not self.talker == None:
-            self.talker.set_speed(float(self.talk_speed.value()) / self.speed_step)
+            value = float(self.talk_speed.value()) / self.speed_step
+            self.talker.set_speed(value)
+            self.speed_label.setText(f"話速: {value:.2f}")
+
+    def on_update_volume(self):
+        if not self.talker == None:
+            value = float(self.volume.value()) / self.volume_step
+            self.talker.set_volume(value)
+            self.volume_label.setText(f"音量: {value:.2f}")
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
