@@ -1,2 +1,5 @@
 aozora/
 config.json
+build/
+dist/
+*.spec
