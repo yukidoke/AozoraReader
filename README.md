@@ -6,11 +6,10 @@
 
 # Requirement
 
-## 実行ファイルをダウンロードする場合
-
 * AssistantSeika 20250113/a
 
-## Pythonスクリプトを実行する場合
+<details>
+<summary> Pythonスクリプトを実行する場合 </summary>
 
 * Python 3.10.6
 * requests 2.32.3
@@ -18,6 +17,7 @@
 * PyQt5 5.15.11
 
 動作を確認したバージョンです。他のバージョンでも動くかもしれません。
+</details>
 
 # Installation
 
