@@ -361,7 +361,7 @@ class AozoraReaderGUI(QMainWindow):
         
         # 音声設定
         voice_layout = QHBoxLayout()
-        voice_label = QLabel('音声:')
+        voice_label = QLabel('話者:')
         self.voice_combo = QComboBox()
         self.voice_combo.currentTextChanged.connect(self.on_voice_changed)
         self.voice_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -426,8 +426,8 @@ class AozoraReaderGUI(QMainWindow):
         input_layout.addLayout(file_layout)
         input_layout.addLayout(seika_layout)
         input_layout.addLayout(voice_layout)
-        input_layout.addLayout(save_layout)
         input_layout.addLayout(params_layout)
+        input_layout.addLayout(save_layout)
         input_group.setLayout(input_layout)
 
         # テキスト表示セクション
@@ -540,7 +540,16 @@ class AozoraReaderGUI(QMainWindow):
             "url": self.url_input.text(),
             "file_path": self.file_path.text(),
             "seika_path": self.seika_path.text(),
-            "chunk_size": self.chunk_size.value()
+            "voice": self.voice_combo.currentText(),
+            "chunk_size": self.chunk_size.value(),
+            "speed_step": self.speed_step,
+            "speed_min": self.talk_speed.minimum(),
+            "speed_max": self.talk_speed.maximum(),
+            "speed_val": self.talk_speed.value(),
+            "volume_step": self.volume_step,
+            "volume_min": self.volume.minimum(),
+            "volume_max": self.volume.maximum(),
+            "volume_val": self.volume.value()
         }
         with open(self.save_filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -553,6 +562,16 @@ class AozoraReaderGUI(QMainWindow):
                 self.file_path.setText(conf['file_path'])
                 self.seika_path.setText(conf['seika_path'])
                 self.chunk_size.setValue(conf['chunk_size'])
+
+                self.update_voice_list()
+                if conf['voice'] in self.talker.voice_dic:
+                    self.voice_combo.setCurrentText(conf['voice'])
+                    self.speed_step = conf['speed_step']
+                    self.talk_speed.setRange(conf['speed_min'], conf['speed_max'])
+                    self.talk_speed.setValue(conf['speed_val'])
+                    self.volume_step = conf['volume_step']
+                    self.volume.setRange(conf['volume_min'], conf['volume_max'])
+                    self.volume.setValue(conf['volume_val'])
         except:
             QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         
