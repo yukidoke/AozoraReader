@@ -125,7 +125,7 @@ class AozoraSeikaTalker:
         for paragraph in paragraphs:
             # 長い段落は文で分割
             if len(paragraph) > chunk_size:
-                sentences = re.split('(。|、|！|？|,|.)', paragraph)
+                sentences = re.split(r'(。|、|！|？|,|\.)', paragraph)
                 i = 0
                 while i < len(sentences):
                     if i+1 < len(sentences) and sentences[i+1] in ['。', '、', '！', '？', ',', '.']:
