@@ -45,6 +45,11 @@ python main.py
 
 # Usage
 
+以下の動画を参照してください。
+気が向けばドキュメントも追加します。
+
+https://www.nicovideo.jp/watch/sm44725477
+
 # License
 
 **AozoraReader** is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
