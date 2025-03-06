@@ -20,7 +20,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
                             QProgressBar, QFileDialog, QMessageBox,
-                            QSlider)
+                            QSlider, QDoubleSpinBox)
 from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
 class AozoraSeikaTalker:
@@ -40,6 +40,7 @@ class AozoraSeikaTalker:
         self.voice_dic = {}
         self.talk_speed = 1.0
         self.talk_volume = 1.0
+        self.chunk_interval = 0.5
         
     def get_aozora_text(self, url):
         """
@@ -101,6 +102,9 @@ class AozoraSeikaTalker:
 
     def set_volume(self, volume):
         self.talk_volume = volume
+
+    def set_interval(self, interval):
+        self.chunk_interval = interval
     
     def split_text_into_chunks(self, text, chunk_size=200):
         """
@@ -156,7 +160,7 @@ class AozoraSeikaTalker:
             
         return chunks
     
-    def speak_text(self, text, voice_name="結月ゆかり", pause_duration=0.5):
+    def speak_text(self, text, voice_name="結月ゆかり"):
         """
         テキストをAssistantSeikaで読み上げる
         
@@ -180,7 +184,7 @@ class AozoraSeikaTalker:
 
         try:
             subprocess.run(cmd, check=True)
-            time.sleep(pause_duration)  # 読み上げ間の間隔
+            time.sleep(self.chunk_interval)  # 読み上げ間の間隔
             return True
         except subprocess.CalledProcessError:
             return False
@@ -421,6 +425,18 @@ class AozoraReaderGUI(QMainWindow):
         self.volume.valueChanged.connect(self.on_update_volume)
         params_layout.addWidget(self.volume_label)
         params_layout.addWidget(self.volume)
+
+        # チャンク間隔
+        chunk_label = QLabel('チャンク間隔:')
+        self.chunk_interval = QDoubleSpinBox()
+        self.chunk_interval.setRange(0.0, 10.0)
+        self.chunk_interval.setDecimals(2)
+        self.chunk_interval.setSingleStep(0.01)
+        self.chunk_interval.setValue(0.5)
+        self.chunk_interval.setSuffix('秒')
+        self.chunk_interval.valueChanged.connect(self.on_update_interval)
+        params_layout.addWidget(chunk_label)
+        params_layout.addWidget(self.chunk_interval)
         
         input_layout.addLayout(url_layout)
         input_layout.addLayout(file_layout)
@@ -549,7 +565,8 @@ class AozoraReaderGUI(QMainWindow):
             "volume_step": self.volume_step,
             "volume_min": self.volume.minimum(),
             "volume_max": self.volume.maximum(),
-            "volume_val": self.volume.value()
+            "volume_val": self.volume.value(),
+            "interval": self.chunk_interval.value()
         }
         with open(self.save_filename, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)
@@ -572,6 +589,9 @@ class AozoraReaderGUI(QMainWindow):
                     self.volume_step = conf['volume_step']
                     self.volume.setRange(conf['volume_min'], conf['volume_max'])
                     self.volume.setValue(conf['volume_val'])
+
+                if 'interval' in conf:
+                    self.chunk_interval.setValue(conf['interval'])
         except:
             QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         
@@ -703,6 +723,10 @@ class AozoraReaderGUI(QMainWindow):
             value = float(self.volume.value()) / self.volume_step
             self.talker.set_volume(value)
             self.volume_label.setText(f"音量: {value:.2f}")
+
+    def on_update_interval(self):
+        if not self.talker == None:
+            self.talker.set_interval(self.chunk_interval.value())
 
 
 if __name__ == "__main__":
