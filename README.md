@@ -14,7 +14,7 @@
 * Python 3.10.6
 * requests 2.32.3
 * beautifulsoup4 4.13.3
-* PyQt5 5.15.11
+* PySide6 6.8.2.1
 
 動作を確認したバージョンです。他のバージョンでも動くかもしれません。
 </details>

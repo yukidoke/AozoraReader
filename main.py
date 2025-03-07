@@ -16,12 +16,12 @@ from bs4 import BeautifulSoup
 import re
 import subprocess
 import time
-from PyQt5.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit, 
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
                             QProgressBar, QFileDialog, QMessageBox,
                             QSlider, QDoubleSpinBox)
-from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
+from PySide6.QtCore import QThread, Signal, Slot, Qt
 
 class AozoraSeikaTalker:
     def __init__(self, seika_path="C:/Program Files/510Product/AssistantSeika"):
@@ -259,10 +259,10 @@ class AozoraSeikaTalker:
 
 # 読み上げ処理を行うワーカースレッド
 class ReaderWorker(QThread):
-    progress_updated = pyqtSignal(int, int)
-    current_text_updated = pyqtSignal(str)
-    reading_finished = pyqtSignal()
-    reading_error = pyqtSignal(str)
+    progress_updated = Signal(int, int)
+    current_text_updated = Signal(str)
+    reading_finished = Signal()
+    reading_error = Signal(str)
     
     def __init__(self, talker, text_chunks, voice_name, parent=None):
         super().__init__(parent)
@@ -305,8 +305,8 @@ class ReaderWorker(QThread):
 
 # テキストの取得を行うワーカースレッド
 class FetchWorker(QThread):
-    fetch_completed = pyqtSignal(str, str, str)
-    fetch_error = pyqtSignal(str)
+    fetch_completed = Signal(str, str, str)
+    fetch_error = Signal(str)
     
     def __init__(self, talker, url, parent=None):
         super().__init__(parent)
@@ -406,8 +406,7 @@ class AozoraReaderGUI(QMainWindow):
         # 速度設定
         params_layout = QHBoxLayout()
         self.speed_label = QLabel('話速:')
-        self.talk_speed = QSlider()
-        self.talk_speed.setOrientation(1)
+        self.talk_speed = QSlider(Qt.Horizontal)
         self.speed_step = 1
         self.talk_speed.setRange(1, 1)
         self.talk_speed.setValue(1)
@@ -417,8 +416,7 @@ class AozoraReaderGUI(QMainWindow):
 
         # 音量設定
         self.volume_label = QLabel('音量:')
-        self.volume = QSlider()
-        self.volume.setOrientation(1)
+        self.volume = QSlider(Qt.Horizontal)
         self.volume_step = 1
         self.volume.setRange(1, 1)
         self.volume.setValue(1)
@@ -595,13 +593,13 @@ class AozoraReaderGUI(QMainWindow):
         except:
             QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         
-    @pyqtSlot(str, str, str)
+    @Slot(str, str, str)
     def on_fetch_completed(self, text, title, author):
         self.process_text(text, title, author)
         self.fetch_button.setEnabled(True)
         self.fetch_button.setText("テキスト取得")
         
-    @pyqtSlot(str)
+    @Slot(str)
     def on_fetch_error(self, error_message):
         QMessageBox.critical(self, "エラー", error_message)
         self.fetch_button.setEnabled(True)
@@ -692,7 +690,7 @@ class AozoraReaderGUI(QMainWindow):
         QMessageBox.critical(self, "エラー", error_message)
         self.on_reading_finished()
 
-    @pyqtSlot(str)
+    @Slot(str)
     def on_voice_changed(self, text):
         if not self.reader_worker == None:
             self.reader_worker.set_voice(text)
@@ -733,4 +731,4 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = AozoraReaderGUI()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
