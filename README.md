@@ -52,10 +52,12 @@ https://www.nicovideo.jp/watch/sm44725477
 
 # License
 
-**AozoraReader** is under [MIT license](https://en.wikipedia.org/wiki/MIT_License).
+**AozoraReader** is licensed under the GNU Lesser General Public License v3.0 (LGPLv3).  
+You can redistribute it and/or modify it under the terms of the License.  
+See the [LICENSE](./LICENSE) file for the full text of the license.
 
 ### v1.1.0以前について
 
 v1.1.0以前には、GUIライブラリとしてPyQt5を使用していました。
 しかし、PyQt5はGPLv3ライセンスであるためMITライセンスでAozoraReaderを配布することはライセンス違反でした。
-そこで、LGPLライセンスであるPySide6を使用するコードへと変更し、v1.1.0以前のReleaseを削除しました。
+そこで、LGPLライセンスであるPySide6を使用するコードへと変更し、v1.1.1以前のReleaseを削除しました。
