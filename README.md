@@ -56,7 +56,7 @@ https://www.nicovideo.jp/watch/sm44725477
 You can redistribute it and/or modify it under the terms of the License.  
 See the [LICENSE](./LICENSE) file for the full text of the license.
 
-### v1.1.0以前について
+### v1.1.1以前について
 
 v1.1.0以前には、GUIライブラリとしてPyQt5を使用していました。
 しかし、PyQt5はGPLv3ライセンスであるためMITライセンスでAozoraReaderを配布することはライセンス違反でした。
