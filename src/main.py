@@ -18,7 +18,7 @@ along with AozoraReader. If not, see <https://www.gnu.org/licenses/>.
 import json
 import sys
 import os
-from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit, 
+from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
                             QProgressBar, QFileDialog, QMessageBox,
@@ -26,12 +26,14 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
 from PySide6.QtCore import Slot, Qt
 
 from aozora_seika_talker import AozoraSeikaTalker
+from config import DataManager
 from reader_worker import ReaderWorker, FetchWorker
 
 class AozoraReaderGUI(QMainWindow):
     def __init__(self):
         super().__init__()
         self.talker = AozoraSeikaTalker()
+        self.data_manager = DataManager()
         self.reader_worker = None
         self.text_chunks = []
         self.full_text = ""
@@ -274,30 +276,31 @@ class AozoraReaderGUI(QMainWindow):
             "volume_val": self.volume.value(),
             "interval": self.chunk_interval.value()
         }
-        with open(self.save_filename, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False, indent=4)
+        self.data_manager.data.url = self.url_input.text()
+        self.data_manager.data.file_path = self.file_path.text()
+        self.data_manager.data.seika_path = self.seika_path.text()
+        self.data_manager.data.voice = self.voice_combo.currentText()
+        self.data_manager.data.chunk_size = self.chunk_size.value()
+        #self.data_manager.data.speed_step = self.speed_step # speed_stepはSaveDataにない
+        #self.data_manager.data.speed_min = self.talk_speed.minimum() # speed_minはSaveDataにない
+        #self.data_manager.data.speed_max = self.talk_speed.maximum() # speed_maxはSaveDataにない
+        self.data_manager.data.interval = self.chunk_interval.value()
+        self.data_manager.save_config(self.save_filename)
 
     def load_config(self):
         try:
-            with open(self.save_filename, "r", encoding="utf-8") as f:
-                conf = json.load(f)
-                self.url_input.setText(conf['url'])
-                self.file_path.setText(conf['file_path'])
-                self.seika_path.setText(conf['seika_path'])
-                self.chunk_size.setValue(conf['chunk_size'])
+            self.data_manager.load_config(self.save_filename)
+            self.url_input.setText(self.data_manager.data.url)
+            self.file_path.setText(self.data_manager.data.file_path)
+            self.seika_path.setText(self.data_manager.data.seika_path)
+            self.chunk_size.setValue(self.data_manager.data.chunk_size)
 
-                self.update_voice_list()
-                if conf['voice'] in self.talker.voice_dic:
-                    self.voice_combo.setCurrentText(conf['voice'])
-                    self.speed_step = conf['speed_step']
-                    self.talk_speed.setRange(conf['speed_min'], conf['speed_max'])
-                    self.talk_speed.setValue(conf['speed_val'])
-                    self.volume_step = conf['volume_step']
-                    self.volume.setRange(conf['volume_min'], conf['volume_max'])
-                    self.volume.setValue(conf['volume_val'])
+            if self.data_manager.data.voice in self.talker.voice_dic:
+                self.voice_combo.setCurrentText(self.data_manager.data.voice)
+                # speedとvolumeの設定は、on_voice_changedで処理されるため、ここでは行わない
 
-                if 'interval' in conf:
-                    self.chunk_interval.setValue(conf['interval'])
+            if self.data_manager.data.interval is not None:
+                self.chunk_interval.setValue(self.data_manager.data.interval)
         except:
             QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         

@@ -84,18 +84,22 @@ class DataManager:
 
             # Load profile
             if 'profiles' in conf:
-                for profile in conf['profiles']:
-                    self.data.profiles[profile].volume =    (self.dict2OptionParam(profile['volume']) if 'volume' in profile else None)
-                    self.data.profiles[profile].speed =     (self.dict2OptionParam(profile['speed']) if 'speed' in profile else None)
-                    self.data.profiles[profile].pitch =     (self.dict2OptionParam(profile['pitch']) if 'pitch' in profile else None)
-                    self.data.profiles[profile].alpha =     (self.dict2OptionParam(profile['alpha']) if 'alpha' in profile else None)
-                    self.data.profiles[profile].intonation =(self.dict2OptionParam(profile['intonation']) if 'intonation' in profile else None)
-                    
-                    if 'emotion' in profile:
-                        for emo in profile['emotion']:
-                            self.data.profiles[profile].emotion[emo] = self.dict2OptionParam(emo)
-                    else:
-                        self.data.profiles[profile].emotion = None
+                if conf['profiles'] != None:
+                    for profile in conf['profiles']:
+                        print(profile)
+                        self.data.profiles[profile].volume =    (self.dict2OptionParam(profile['volume']) if 'volume' in profile else None)
+                        self.data.profiles[profile].speed =     (self.dict2OptionParam(profile['speed']) if 'speed' in profile else None)
+                        self.data.profiles[profile].pitch =     (self.dict2OptionParam(profile['pitch']) if 'pitch' in profile else None)
+                        self.data.profiles[profile].alpha =     (self.dict2OptionParam(profile['alpha']) if 'alpha' in profile else None)
+                        self.data.profiles[profile].intonation =(self.dict2OptionParam(profile['intonation']) if 'intonation' in profile else None)
+                        
+                        if 'emotion' in profile:
+                            for emo in profile['emotion']:
+                                self.data.profiles[profile].emotion[emo] = self.dict2OptionParam(emo)
+                        else:
+                            self.data.profiles[profile].emotion = None
+                else:
+                    self.data.profiles = None
             elif self.data.voice != None:
                 # Load old format profile
                 self.data.profiles[self.data.voice].volume.min_val =    (conf['volume_min'] if 'volume_min' in conf else None)
