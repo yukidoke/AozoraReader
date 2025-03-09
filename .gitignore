@@ -1,6 +1,10 @@
 aozora/
-config.json
 build/
 dist/
+
+config.json
+
+src/__pycache__/
+
 *.spec
 .clinerules
