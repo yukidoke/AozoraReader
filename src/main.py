@@ -15,15 +15,14 @@ You should have received a copy of the GNU Lesser General Public License
 along with AozoraReader. If not, see <https://www.gnu.org/licenses/>.
 """
 
-import json
 import sys
 import os
 from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
                             QComboBox, QPushButton, QTextEdit, QSpinBox, 
                             QVBoxLayout, QHBoxLayout, QWidget, QGroupBox, 
                             QProgressBar, QFileDialog, QMessageBox,
-                            QSlider, QDoubleSpinBox)
-from PySide6.QtCore import Slot, Qt
+                            QDoubleSpinBox, QDial)
+from PySide6.QtCore import Slot
 
 from aozora_seika_talker import AozoraSeikaTalker
 from config import DataManager
@@ -32,15 +31,15 @@ from reader_worker import ReaderWorker, FetchWorker
 class AozoraReaderGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.talker = AozoraSeikaTalker()
         self.data_manager = DataManager()
+        self.talker = AozoraSeikaTalker(save_data=self.data_manager.data)
         self.reader_worker = None
         self.text_chunks = []
         self.full_text = ""
         self.init_ui()
         
     def init_ui(self):
-        self.setWindowTitle('青空文庫音声読み上げアプリ')
+        self.setWindowTitle('AozoraReader')
         self.setGeometry(100, 100, 800, 600)
         
         # メインウィジェットとレイアウト
@@ -113,27 +112,6 @@ class AozoraReaderGUI(QMainWindow):
         self.config_load.clicked.connect(self.load_config)
         save_layout.addWidget(self.config_load)
 
-        # 速度設定
-        params_layout = QHBoxLayout()
-        self.speed_label = QLabel('話速:')
-        self.talk_speed = QSlider(Qt.Horizontal)
-        self.speed_step = 1
-        self.talk_speed.setRange(1, 1)
-        self.talk_speed.setValue(1)
-        self.talk_speed.valueChanged.connect(self.on_update_speed)
-        params_layout.addWidget(self.speed_label)
-        params_layout.addWidget(self.talk_speed)
-
-        # 音量設定
-        self.volume_label = QLabel('音量:')
-        self.volume = QSlider(Qt.Horizontal)
-        self.volume_step = 1
-        self.volume.setRange(1, 1)
-        self.volume.setValue(1)
-        self.volume.valueChanged.connect(self.on_update_volume)
-        params_layout.addWidget(self.volume_label)
-        params_layout.addWidget(self.volume)
-
         # チャンク間隔
         chunk_label = QLabel('チャンク間隔:')
         self.chunk_interval = QDoubleSpinBox()
@@ -143,14 +121,18 @@ class AozoraReaderGUI(QMainWindow):
         self.chunk_interval.setValue(0.5)
         self.chunk_interval.setSuffix('秒')
         self.chunk_interval.valueChanged.connect(self.on_update_interval)
-        params_layout.addWidget(chunk_label)
-        params_layout.addWidget(self.chunk_interval)
-        
+        voice_layout.addWidget(chunk_label)
+        voice_layout.addWidget(self.chunk_interval)
+
+        # パラメータ設定スライダー
+        slide_layout = QHBoxLayout()
+        slide_layout.setObjectName('ParamsSlider')
+
         input_layout.addLayout(url_layout)
         input_layout.addLayout(file_layout)
         input_layout.addLayout(seika_layout)
         input_layout.addLayout(voice_layout)
-        input_layout.addLayout(params_layout)
+        input_layout.addLayout(slide_layout)
         input_layout.addLayout(save_layout)
         input_group.setLayout(input_layout)
 
@@ -215,6 +197,7 @@ class AozoraReaderGUI(QMainWindow):
     def update_seika_path(self):
         self.talker.seika_path = self.seika_path.text()
         self.talker.seika_console = os.path.join(self.talker.seika_path, "SeikaSay2.exe")
+        self.data_manager.data.seika_path = self.seika_path.text()
         
     def update_voice_list(self):
         current_voice = self.voice_combo.currentText()
@@ -249,7 +232,8 @@ class AozoraReaderGUI(QMainWindow):
         if not url:
             QMessageBox.warning(self, "警告", "URLを入力してください")
             return
-            
+        
+        self.data_manager.data.url = url
         self.fetch_button.setEnabled(False)
         self.fetch_button.setText("取得中...")
         
@@ -259,32 +243,8 @@ class AozoraReaderGUI(QMainWindow):
         self.fetch_worker.fetch_error.connect(self.on_fetch_error)
         self.fetch_worker.start()
 
+# MARK: save/load config
     def save_config(self):
-        data = {
-            "url": self.url_input.text(),
-            "file_path": self.file_path.text(),
-            "seika_path": self.seika_path.text(),
-            "voice": self.voice_combo.currentText(),
-            "chunk_size": self.chunk_size.value(),
-            "speed_step": self.speed_step,
-            "speed_min": self.talk_speed.minimum(),
-            "speed_max": self.talk_speed.maximum(),
-            "speed_val": self.talk_speed.value(),
-            "volume_step": self.volume_step,
-            "volume_min": self.volume.minimum(),
-            "volume_max": self.volume.maximum(),
-            "volume_val": self.volume.value(),
-            "interval": self.chunk_interval.value()
-        }
-        self.data_manager.data.url = self.url_input.text()
-        self.data_manager.data.file_path = self.file_path.text()
-        self.data_manager.data.seika_path = self.seika_path.text()
-        self.data_manager.data.voice = self.voice_combo.currentText()
-        self.data_manager.data.chunk_size = self.chunk_size.value()
-        #self.data_manager.data.speed_step = self.speed_step # speed_stepはSaveDataにない
-        #self.data_manager.data.speed_min = self.talk_speed.minimum() # speed_minはSaveDataにない
-        #self.data_manager.data.speed_max = self.talk_speed.maximum() # speed_maxはSaveDataにない
-        self.data_manager.data.interval = self.chunk_interval.value()
         self.data_manager.save_config(self.save_filename)
 
     def load_config(self):
@@ -294,14 +254,15 @@ class AozoraReaderGUI(QMainWindow):
             self.file_path.setText(self.data_manager.data.file_path)
             self.seika_path.setText(self.data_manager.data.seika_path)
             self.chunk_size.setValue(self.data_manager.data.chunk_size)
+            self.chunk_interval.setValue(self.data_manager.data.interval)
 
+            self.update_voice_list()
             if self.data_manager.data.voice in self.talker.voice_dic:
                 self.voice_combo.setCurrentText(self.data_manager.data.voice)
-                # speedとvolumeの設定は、on_voice_changedで処理されるため、ここでは行わない
+                self.update_sliders(self.data_manager.data.voice)
 
-            if self.data_manager.data.interval is not None:
-                self.chunk_interval.setValue(self.data_manager.data.interval)
-        except:
+        except Exception as e:
+            print(e)
             QMessageBox.warning(self, "警告", "設定ファイルの読み込みに失敗しました")
         
     @Slot(str, str, str)
@@ -347,7 +308,7 @@ class AozoraReaderGUI(QMainWindow):
         self.text_chunks = self.talker.split_text_into_chunks(text, chunk_size)
 
         # 新しいワーカーを作成して開始
-        self.reader_worker = ReaderWorker(self.talker, self.text_chunks, voice_name)
+        self.reader_worker = ReaderWorker(self.talker, self.text_chunks)
         self.reader_worker.progress_updated.connect(self.update_progress)
         self.reader_worker.current_text_updated.connect(self.update_current_text)
         self.reader_worker.reading_finished.connect(self.on_reading_finished)
@@ -390,7 +351,60 @@ class AozoraReaderGUI(QMainWindow):
                 self.reader_worker.wait()
                 
             self.on_reading_finished()
-            
+
+    def update_sliders(self, voice_name : str):
+        obj : QHBoxLayout = self.centralWidget().findChild(QHBoxLayout, 'ParamsSlider')
+        self.clear_layout(obj)
+        self.talker.get_voice_params(voice_name)
+
+        for key in self.data_manager.data.effect[voice_name]:
+            dial = QDial()
+            dial.setRange(self.data_manager.data.effect[voice_name][key].min_val, self.data_manager.data.effect[voice_name][key].max_val)
+            dial.setValue(self.data_manager.data.effect[voice_name][key].value)
+            dial.valueChanged.connect(lambda value, k=key: self.on_update_slider(k, value, isEffect=True))
+
+            dial.setNotchesVisible(True)
+            dial.setNotchTarget((self.data_manager.data.effect[voice_name][key].max_val - self.data_manager.data.effect[voice_name][key].min_val) / 20.0)
+            dial.setWrapping(False)
+
+            param = QVBoxLayout()
+            label = QLabel(f"{key}: {self.data_manager.data.effect[voice_name][key].value / self.data_manager.data.effect[voice_name][key].scale}")
+            label.setObjectName(key)
+            param.addWidget(label)
+            param.addWidget(dial)
+            obj.addLayout(param)
+
+        for key in self.data_manager.data.emotion[voice_name]:
+            dial = QDial()
+            dial.setRange(self.data_manager.data.emotion[voice_name][key].min_val, self.data_manager.data.emotion[voice_name][key].max_val)
+            dial.setValue(self.data_manager.data.emotion[voice_name][key].value)
+            dial.valueChanged.connect(lambda value, k=key: self.on_update_slider(k, value, isEffect=False))
+
+            dial.setNotchesVisible(True)
+            dial.setNotchTarget((self.data_manager.data.emotion[voice_name][key].max_val - self.data_manager.data.emotion[voice_name][key].min_val) / 20.0)
+            dial.setWrapping(False)
+
+            param = QVBoxLayout()
+            label = QLabel(f"{key}: {self.data_manager.data.emotion[voice_name][key].value / self.data_manager.data.emotion[voice_name][key].scale}")
+            label.setObjectName(key)
+            param.addWidget(label)
+            param.addWidget(dial)
+            obj.addLayout(param)
+
+        self.update()
+
+    def clear_layout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+            else:
+                child_layout = item.layout()
+                if child_layout:
+                    self.clear_layout(child_layout)
+                    child_layout.deleteLater()
+
     def on_reading_finished(self):
         self.start_button.setEnabled(True)
         self.pause_button.setEnabled(False)
@@ -401,41 +415,23 @@ class AozoraReaderGUI(QMainWindow):
         QMessageBox.critical(self, "エラー", error_message)
         self.on_reading_finished()
 
+# MARK: on_update
     @Slot(str)
     def on_voice_changed(self, text):
-        if not self.reader_worker == None:
-            self.reader_worker.set_voice(text)
-        if not self.talker == None:
-            dflt, vmin, vmax, step = self.talker.get_voice_speed(text)
-            if not dflt == None:
-                scale = 1 / step
-                self.speed_step = scale
-                self.talk_speed.setRange(int(vmin * scale), int(vmax * scale))
-                self.talk_speed.setValue(int(dflt * scale))
-                self.talker.set_speed(dflt)
-            dflt, vmin, vmax, step = self.talker.get_voice_volume(text)
-            if not dflt == None:
-                scale = 1 / step
-                self.volume_step = scale
-                self.volume.setRange(int(vmin * scale), int(vmax * scale))
-                self.volume.setValue(int(dflt * scale))
-                self.talker.set_volume(dflt)
+        self.data_manager.data.voice = text
+        self.update_sliders(text)
 
-    def on_update_speed(self):
-        if not self.talker == None:
-            value = float(self.talk_speed.value()) / self.speed_step
-            self.talker.set_speed(value)
-            self.speed_label.setText(f"話速: {value:.2f}")
-
-    def on_update_volume(self):
-        if not self.talker == None:
-            value = float(self.volume.value()) / self.volume_step
-            self.talker.set_volume(value)
-            self.volume_label.setText(f"音量: {value:.2f}")
+    def on_update_slider(self, param_name : str, value : int, isEffect=True):
+        obj : QLabel = self.centralWidget().findChild(QLabel, param_name)
+        if isEffect:
+            obj.setText(f"{param_name}: {value / self.data_manager.data.effect[self.data_manager.data.voice][param_name].scale}")
+            self.data_manager.data.effect[self.data_manager.data.voice][param_name].value = value
+        else:
+            obj.setText(f"{param_name}: {value / self.data_manager.data.emotion[self.data_manager.data.voice][param_name].scale}")
+            self.data_manager.data.emotion[self.data_manager.data.voice][param_name].value = value
 
     def on_update_interval(self):
-        if not self.talker == None:
-            self.talker.set_interval(self.chunk_interval.value())
+        self.data_manager.data.interval = self.chunk_interval.value()
 
 
 if __name__ == "__main__":

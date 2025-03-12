@@ -25,15 +25,11 @@ class ReaderWorker(QThread):
     reading_finished = Signal()
     reading_error = Signal(str)
     
-    def __init__(self, talker, text_chunks, voice_name, parent=None):
+    def __init__(self, talker, text_chunks, parent=None):
         super().__init__(parent)
         self.talker = talker
         self.chunks = text_chunks
-        self.voice_name = voice_name
         self.current_chunk = 0
-
-    def set_voice(self, voice_name):
-        self.voice_name = voice_name
 
     def run(self):
         self.talker.is_reading = True
@@ -50,7 +46,7 @@ class ReaderWorker(QThread):
             chunk = self.chunks[self.current_chunk]
             self.current_text_updated.emit(chunk)
             
-            success = self.talker.speak_text(chunk, self.voice_name)
+            success = self.talker.speak_text(chunk)
             if not success:
                 self.reading_error.emit("音声の読み上げに失敗しました。AssistantSeikaの設定を確認してください。")
                 break
