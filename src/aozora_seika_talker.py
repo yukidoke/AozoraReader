@@ -21,9 +21,10 @@ import os
 import re
 import subprocess
 import time
+from config import SaveData
 
 class AozoraSeikaTalker:
-    def __init__(self, seika_path="C:/Program Files/510Product/AssistantSeika"):
+    def __init__(self, save_data : SaveData, seika_path="C:/Program Files/510Product/AssistantSeika"):
         """
         AssistantSeikaを使用して青空文庫の作品を音声読み上げするクラス
         
@@ -40,6 +41,7 @@ class AozoraSeikaTalker:
         self.talk_speed = 1.0
         self.talk_volume = 1.0
         self.chunk_interval = 0.5
+        self.data : SaveData = save_data
         
     def get_aozora_text(self, url):
         """
@@ -95,16 +97,7 @@ class AozoraSeikaTalker:
             
         except Exception as e:
             return None, "エラー", str(e)
-        
-    def set_speed(self, speed):
-        self.talk_speed = speed
 
-    def set_volume(self, volume):
-        self.talk_volume = volume
-
-    def set_interval(self, interval):
-        self.chunk_interval = interval
-    
     def split_text_into_chunks(self, text, chunk_size=200):
         """
         テキストを適切な大きさのチャンクに分割する
@@ -159,7 +152,7 @@ class AozoraSeikaTalker:
             
         return chunks
     
-    def speak_text(self, text, voice_name="結月ゆかり"):
+    def speak_text(self, text : str):
         """
         テキストをAssistantSeikaで読み上げる
         
@@ -173,15 +166,27 @@ class AozoraSeikaTalker:
             読み上げ間の一時停止の秒数
         """
 
-        cmd = [
+        cmd : list = [
             self.seika_console,
-            "-cid", self.voice_dic[voice_name],  # チャンネルID
-            "-speed", str(self.talk_speed),
-            "-volume", str(self.talk_volume),
-            "-t", text.replace('\n', ' ')  # 改行をスペースに置換
+            "-cid", self.voice_dic[self.data.voice]
         ]
 
+        if self.data.effect[self.data.voice] != None:
+            for key in self.data.effect[self.data.voice]:
+                cmd.append(f'-{key}')
+                cmd.append(str(self.data.effect[self.data.voice][key].value / self.data.effect[self.data.voice][key].scale))
+
+        if self.data.emotion[self.data.voice] != None:
+            for key in self.data.emotion[self.data.voice]:
+                cmd.append(f'-emotion')
+                cmd.append(key)
+                cmd.append(str(self.data.emotion[self.data.voice][key].value / self.data.emotion[self.data.voice][key].scale))
+
+        cmd.append('-t')
+        cmd.append(text.replace('\n', ' '))
+
         try:
+            print(cmd)
             subprocess.run(cmd, check=True)
             time.sleep(self.chunk_interval)  # 読み上げ間の間隔
             return True
@@ -220,38 +225,62 @@ class AozoraSeikaTalker:
             # エラーが発生した場合、デフォルトの声リストを返す
             return ["結月ゆかり", "琴葉茜", "琴葉葵", "東北きりたん", "京町セイカ"]
 
-    def get_voice_speed(self, voice_name):
-        if voice_name in self.voice_dic:
-            cmd = [
-                self.seika_console,
-                "-cid", self.voice_dic[voice_name],
-                "-params"
-            ]
+    def get_voice_params(self, voice_name : str):
+        """
+        現在の音声で利用可能なパラメータを取得
+        """
+        self.get_voice_list()
+        if not voice_name in self.voice_dic: return
 
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-                for line in result.stdout.splitlines():
-                    m = re.fullmatch(r'effect\s*:\s*speed\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
-                    if not m == None:
-                        return float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
-            except:
-                return None, None, None, None
-        return None, None, None, None
-    
-    def get_voice_volume(self, voice_name):
-        if voice_name in self.voice_dic:
-            cmd = [
-                self.seika_console,
-                "-cid", self.voice_dic[voice_name],
-                "-params"
-            ]
+        cmd = [
+            self.seika_console,
+            "-cid", self.voice_dic[voice_name],
+            "-params"
+        ]
 
-            try:
-                result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-                for line in result.stdout.splitlines():
-                    m = re.fullmatch(r'effect\s*:\s*volume\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
-                    if not m == None:
-                        return float(m.group(1)), float(m.group(2)), float(m.group(3)), float(m.group(4))
-            except:
-                return None, None, None, None
-        return None, None, None, None
+        try:
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            for line in result.stdout.splitlines():
+                effect = re.fullmatch(r'effect\s*:\s*(.+?)\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
+                emotion = re.fullmatch(r'emotion\s*:\s*(.+?)\s*=\s*(.+)\s*\[(.+?)～(.+?),\s*step\s*(.+?)\]\s*', line)
+
+                if effect != None:
+                    print(effect.group(1))
+                    def_val = float(effect.group(2))
+                    min_val = float(effect.group(3))
+                    max_val = float(effect.group(4))
+                    stp_val = float(effect.group(5))
+
+                    stp_val = 1 / stp_val
+                    def_val = int(def_val * stp_val)
+                    min_val = int(min_val * stp_val)
+                    max_val = int(max_val * stp_val)
+
+                    if self.data.effect[voice_name][effect.group(1)].value != None:
+                            def_val = self.data.effect[voice_name][effect.group(1)].value
+                            def_val = min(def_val, max_val)
+                            def_val = max(def_val, min_val)
+
+                    self.data.effect[voice_name][effect.group(1)].set_value(min_val, max_val, def_val, stp_val)
+
+                if emotion != None:
+                    print(emotion.group(1))
+                    def_val = float(emotion.group(2))
+                    min_val = float(emotion.group(3))
+                    max_val = float(emotion.group(4))
+                    stp_val = float(emotion.group(5))
+
+                    stp_val = 1 / stp_val
+                    def_val = int(def_val * stp_val)
+                    min_val = int(min_val * stp_val)
+                    max_val = int(max_val * stp_val)
+
+                    if self.data.emotion[voice_name][emotion.group(1)].value != None:
+                        def_val = self.data.emotion[voice_name][emotion.group(1)].value
+                        def_val = min(def_val, max_val)
+                        def_val = max(def_val, min_val)
+                    self.data.emotion[voice_name][emotion.group(1)].set_value(min_val, max_val, def_val, stp_val)
+
+        except Exception as e:
+            print(e)
+            return
