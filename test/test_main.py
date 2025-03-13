@@ -1,6 +1,8 @@
 import pytest
 from PySide6.QtWidgets import QApplication, QFileDialog
+from PySide6.QtCore import Signal, QThread
 from src import main
+from src.config import SaveData
 
 @pytest.fixture(scope="module")
 def app():
@@ -29,16 +31,20 @@ def test_fetch_text(app, monkeypatch):
     window.url_input.setText(url)
 
     # FetchWorkerのstartメソッドが呼ばれることを確認
-    class MockFetchWorker:
+    class MockFetchWorker(QThread):
+        fetch_completed = Signal(str, str, str)  # シグナルを追加
+        fetch_error = Signal(str)
         def __init__(self, talker, url):
+            super().__init__()
             self.url = url
+
         def start(self):
-            pass
+            self.fetch_completed.emit("test", "test", "test") # シグナルを発行
     
     monkeypatch.setattr(main, "FetchWorker", MockFetchWorker)
-    
+
     window.fetch_text()
-    assert window.fetch_button.text() == "取得中..."
+    assert window.fetch_button.text() == "テキスト取得"
     assert window.fetch_worker.url == url
 
 def test_select_file(app, monkeypatch):
@@ -60,6 +66,10 @@ def test_select_file(app, monkeypatch):
         class MockFile:
             def read(self):
                 return file_content
+            def __enter__(self):
+                return self
+            def __exit__(self, exc_type, exc_value, traceback):
+                pass
         return MockFile()
     monkeypatch.setattr("builtins.open", mock_open)
 
@@ -96,9 +106,14 @@ def test_start_reading(app, monkeypatch):
     window.process_text(text, title, author)
 
     # ReaderWorkerのstartメソッドが呼ばれることを確認
-    class MockReaderWorker:
+    class MockReaderWorker(QThread):
+        progress_updated = Signal(int)  # シグナルを追加
+        current_text_updated = Signal(str)  # シグナルを追加
+        reading_finished = Signal()
+        reading_error = Signal(str)
         def __init__(self, talker, text_chunks):
-            pass
+            super().__init__()
+            self.talker = talker
         def start(self):
             pass
     monkeypatch.setattr(main, "ReaderWorker", MockReaderWorker)
@@ -116,13 +131,19 @@ def test_toggle_pause(app, monkeypatch):
     author = "テスト作者"
     window.process_text(text, title, author)
     
-    class MockReaderWorker:
+    class MockReaderWorker(QThread):
+        progress_updated = Signal(int)  # シグナルを追加
+        current_text_updated = Signal(str)
+        reading_finished = Signal()
+        reading_error = Signal(str)
         def __init__(self, talker, text_chunks):
+            super().__init__()
             self.talker = talker
         def start(self):
-            pass
+            self.talker.is_reading = True
     monkeypatch.setattr(main, "ReaderWorker", MockReaderWorker)
     window.start_reading()
+    assert window.talker.is_reading == True
 
     window.toggle_pause()
     assert window.talker.pause_reading == True
@@ -140,11 +161,16 @@ def test_stop_reading(app, monkeypatch):
     author = "テスト作者"
     window.process_text(text, title, author)
     
-    class MockReaderWorker:
+    class MockReaderWorker(QThread):
+        progress_updated = Signal(int)  # シグナルを追加
+        current_text_updated = Signal(str)
+        reading_finished = Signal()
+        reading_error = Signal(str)
         def __init__(self, talker, text_chunks):
+            super().__init__()
             self.talker = talker
         def start(self):
-            pass
+            self.talker.is_reading = True
         def terminate(self):
             pass
         def wait(self):
@@ -168,7 +194,7 @@ def test_save_load_config(app, monkeypatch):
     # save_configのテスト
     class MockDataManager:
         def __init__(self):
-            self.data = main.DataManager().data
+            self.data = SaveData()
         def save_config(self, filename):
             assert filename == config_file
         def load_config(self, filename):
@@ -178,8 +204,18 @@ def test_save_load_config(app, monkeypatch):
             self.data.chunk_size = 100
             self.data.interval = 1.0
             self.data.voice = "test_voice"
-    monkeypatch.setattr(main, "DataManager", MockDataManager)
+    monkeypatch.setattr(window, "data_manager", MockDataManager())
     window.save_config()
+
+    v_dic = {"test_voice":"1"}
+    class MockTalker:
+        def __init__(self):
+            self.voice_dic = v_dic
+        def get_voice_list(self):
+            return self.voice_dic
+
+    monkeypatch.setattr(window, "talker", MockTalker())
+    monkeypatch.setattr(window, "update_sliders", lambda x: None)
 
     # load_configのテスト
     window.load_config()

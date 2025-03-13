@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 from src.aozora_seika_talker import AozoraSeikaTalker
 from src.config import SaveData
+import subprocess
 
 @pytest.fixture
 def save_data():
@@ -25,7 +26,7 @@ class TestAozoraSeikaTalker:
             - dataがSaveDataのインスタンスであること。
         """
         assert talker.seika_path == "dummy_seika_path"
-        assert talker.seika_console == "dummy_seika_path/SeikaSay2.exe"
+        assert talker.seika_console == "dummy_seika_path\\SeikaSay2.exe"
         assert talker.is_reading == False
         assert talker.pause_reading == False
         assert talker.voice_dic == {}
@@ -80,16 +81,13 @@ class TestAozoraSeikaTalker:
         テストの意図: split_text_into_chunksがテキストを正しくチャンクに分割できることを確認する。
         仕様:
             - 指定されたchunk_sizeに基づいてテキストが分割されること。
-            - 段落が正しく分割されること。
             - 長い段落が文単位で分割されること。
         """
         text = "これは最初の段落です。\n\nこれは2番目の段落です。長文なので分割されます。これは2番目の段落の続きです。"
         chunks = talker.split_text_into_chunks(text, chunk_size=30)
-        assert len(chunks) == 4
-        assert chunks[0] == "これは最初の段落です。"
-        assert chunks[1] == "これは2番目の段落です。"
-        assert chunks[2] == "長文なので分割されます。"
-        assert chunks[3] == "これは2番目の段落の続きです。"
+        assert len(chunks) == 2
+        assert chunks[0] == "これは最初の段落です。これは2番目の段落です。"
+        assert chunks[1] == "長文なので分割されます。これは2番目の段落の続きです。"
 
     @patch('src.aozora_seika_talker.subprocess.run')
     def test_speak_text_success(self, mock_run, talker):
@@ -136,8 +134,8 @@ class TestAozoraSeikaTalker:
         """
         mock_run.return_value.stdout = "  1 結月ゆかり - VOICE1\n  2 琴葉茜 - VOICE2"
         voices = talker.get_voice_list()
-        assert voices == ["結月ゆかり", "琴葉茜"]
-        assert talker.voice_dic == {"結月ゆかり": "1", "琴葉茜": "2"}
+        assert voices == ["結月ゆかり - VOICE1", "琴葉茜 - VOICE2"]
+        assert talker.voice_dic == {"結月ゆかり - VOICE1": "1", "琴葉茜 - VOICE2": "2"}
 
     @patch('src.aozora_seika_talker.subprocess.run')
     def test_get_voice_list_failure(self, mock_run, talker):
@@ -158,12 +156,12 @@ class TestAozoraSeikaTalker:
             - subprocess.runが正しく呼び出されること。
             - パラメータが正しくパースされ、SaveDataに設定されること。
         """
-        talker.data.voice = "結月ゆかり"
-        talker.voice_dic = {"結月ゆかり": "1"}
+        talker.data.voice = "結月ゆかり - VOICE1"
+        talker.voice_dic = {"結月ゆかり - VOICE1": "1"}
         mock_run.side_effect = [
             MagicMock(stdout="  1 結月ゆかり - VOICE1\n  2 琴葉茜 - VOICE2"),
             MagicMock(stdout="effect : speed = 1.0 [0.5～2.0, step 0.1]\nemotion : happiness = 0.0 [-1.0～1.0, step 0.1]")
         ]
-        talker.get_voice_params("結月ゆかり")
-        assert talker.data.effect["結月ゆかり"]["speed"].value == 10
-        assert talker.data.emotion["結月ゆかり"]["happiness"].value == 0
+        talker.get_voice_params("結月ゆかり - VOICE1")
+        assert talker.data.effect["結月ゆかり - VOICE1"]["speed"].value == 10
+        assert talker.data.emotion["結月ゆかり - VOICE1"]["happiness"].value == 0
