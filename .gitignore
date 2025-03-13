@@ -4,7 +4,9 @@ dist/
 
 config.json
 
-src/__pycache__/
+__pycache__/
 
 *.spec
 .clinerules
+
+.coverage

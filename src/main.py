@@ -24,9 +24,9 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
                             QDoubleSpinBox, QDial)
 from PySide6.QtCore import Slot
 
-from aozora_seika_talker import AozoraSeikaTalker
-from config import DataManager
-from reader_worker import ReaderWorker, FetchWorker
+from src.aozora_seika_talker import AozoraSeikaTalker
+from src.config import DataManager
+from src.reader_worker import ReaderWorker, FetchWorker
 
 class AozoraReaderGUI(QMainWindow):
     def __init__(self):

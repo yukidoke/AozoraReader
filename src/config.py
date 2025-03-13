@@ -19,7 +19,6 @@ import dataclasses
 import json
 import os
 from collections import defaultdict
-import copy
 
 # オプションパラメータ
 @dataclasses.dataclass
@@ -41,7 +40,7 @@ class SaveData:
     # Input params
     url : str = None
     file_path : str | os.PathLike = None
-    seika_path : str | os.PathLike = None
+    seika_path : str | os.PathLike = "C:/Program Files/510Product/AssistantSeika"
 
     # Reader params
     voice : str = None
@@ -69,6 +68,9 @@ class DataManager:
         return ret
 
     def load_config(self, file_path="config.json"):
+        if not os.path.exists(file_path) or not os.path.isfile(file_path):
+            return
+
         with open(file_path, "r", encoding="utf-8") as f:
             conf = json.load(f)
 
