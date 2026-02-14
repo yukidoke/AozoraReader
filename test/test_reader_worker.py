@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 def reader_worker():
     talker_mock = MagicMock()
     talker_mock.speak_text.return_value = True
+    talker_mock.pause_reading = False
     text_chunks = ["chunk1", "chunk2"]
     return ReaderWorker(talker_mock, text_chunks)
 
@@ -56,36 +57,85 @@ def test_reader_worker_get_current_position(reader_worker):
     reader_worker.current_chunk = 1
     assert reader_worker.get_current_position() == 1
 
-@patch('src.aozora_seika_talker.AozoraSeikaTalker.get_aozora_text')
-def test_fetch_worker_run_success(mock_get_aozora_text, fetch_worker):
+def test_reader_worker_speak_failure():
+    """speak_textがFalse → reading_errorシグナル発行、中断"""
+    talker_mock = MagicMock()
+    talker_mock.speak_text.return_value = False
+    talker_mock.pause_reading = False
+    worker = ReaderWorker(talker_mock, ["chunk1", "chunk2"])
+
+    reading_error_mock = MagicMock()
+    reading_finished_mock = MagicMock()
+    worker.reading_error.connect(reading_error_mock)
+    worker.reading_finished.connect(reading_finished_mock)
+
+    worker.run()
+
+    assert talker_mock.speak_text.call_count == 1
+    reading_error_mock.assert_called_once()
+    reading_finished_mock.assert_called_once()
+
+def test_reader_worker_stop_mid_reading():
+    """is_readingが途中でFalse → ループ中断"""
+    talker_mock = MagicMock()
+    talker_mock.pause_reading = False
+    def speak_side_effect(text):
+        talker_mock.is_reading = False
+        return True
+    talker_mock.speak_text.side_effect = speak_side_effect
+
+    worker = ReaderWorker(talker_mock, ["chunk1", "chunk2", "chunk3"])
+
+    reading_finished_mock = MagicMock()
+    worker.reading_finished.connect(reading_finished_mock)
+
+    worker.run()
+
+    assert talker_mock.speak_text.call_count == 1
+    reading_finished_mock.assert_called_once()
+
+def test_reader_worker_empty_chunks():
+    """空チャンクリスト → 即座にreading_finished"""
+    talker_mock = MagicMock()
+    talker_mock.pause_reading = False
+    worker = ReaderWorker(talker_mock, [])
+
+    reading_finished_mock = MagicMock()
+    worker.reading_finished.connect(reading_finished_mock)
+
+    worker.run()
+
+    talker_mock.speak_text.assert_not_called()
+    reading_finished_mock.assert_called_once()
+
+def test_fetch_worker_run_success(fetch_worker):
     """
     テストの意図: FetchWorkerのrunメソッドが成功した場合の動作を確認する。
     仕様:
         1. get_aozora_textが正しく呼び出されること。
         2. fetch_completedシグナルが適切な引数でemitされること。
     """
-    mock_get_aozora_text.return_value = ("text", "title", "author")
+    fetch_worker.talker.get_aozora_text.return_value = ("text", "title", "author")
     fetch_completed_mock = MagicMock()
     fetch_worker.fetch_completed.connect(fetch_completed_mock)
-    
+
     fetch_worker.run()
-    
-    mock_get_aozora_text.assert_called_once_with(fetch_worker.url)
+
+    fetch_worker.talker.get_aozora_text.assert_called_once_with(fetch_worker.url)
     fetch_completed_mock.assert_called_once_with("text", "title", "author")
 
-@patch('src.aozora_seika_talker.AozoraSeikaTalker.get_aozora_text')
-def test_fetch_worker_run_failure(mock_get_aozora_text, fetch_worker):
+def test_fetch_worker_run_failure(fetch_worker):
     """
     テストの意図: FetchWorkerのrunメソッドが失敗した場合の動作を確認する。
     仕様:
         1. get_aozora_textが正しく呼び出されること。
         2. fetch_errorシグナルが適切な引数でemitされること。
     """
-    mock_get_aozora_text.return_value = (None, "title", "error")
+    fetch_worker.talker.get_aozora_text.return_value = (None, "title", "error")
     fetch_error_mock = MagicMock()
     fetch_worker.fetch_error.connect(fetch_error_mock)
-    
+
     fetch_worker.run()
-    
-    mock_get_aozora_text.assert_called_once_with(fetch_worker.url)
+
+    fetch_worker.talker.get_aozora_text.assert_called_once_with(fetch_worker.url)
     fetch_error_mock.assert_called_once_with("テキストの取得に失敗しました: error")

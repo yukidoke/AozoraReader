@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from src.aozora_seika_talker import AozoraSeikaTalker
-from src.config import SaveData
+from src.config import SaveData, OptionParam
 import subprocess
 
 @pytest.fixture
@@ -147,6 +147,152 @@ class TestAozoraSeikaTalker:
         mock_run.side_effect = subprocess.CalledProcessError(1, ["cmd"])
         voices = talker.get_voice_list()
         assert voices == ["結月ゆかり", "琴葉茜", "琴葉葵", "東北きりたん", "京町セイカ"]
+
+    # --- 1-1. split_text_into_chunks エッジケース ---
+
+    def test_split_empty_string(self, talker):
+        """空文字列 → 空リスト"""
+        chunks = talker.split_text_into_chunks("")
+        assert chunks == []
+
+    def test_split_single_short_paragraph(self, talker):
+        """chunk_size未満の短い段落 → 1チャンク"""
+        chunks = talker.split_text_into_chunks("短いテキスト", chunk_size=200)
+        assert len(chunks) == 1
+        assert chunks[0] == "短いテキスト"
+
+    def test_split_long_paragraph_with_punctuation(self, talker):
+        """chunk_size超の段落が句読点で分割される"""
+        text = "これは長い段落です。句読点で分割されます。さらに続きます。"
+        chunks = talker.split_text_into_chunks(text, chunk_size=20)
+        assert len(chunks) == 2
+        assert chunks[0] == "これは長い段落です。"
+        assert chunks[1] == "句読点で分割されます。さらに続きます。"
+
+    def test_split_long_paragraph_no_punctuation(self, talker):
+        """句読点なしの長い段落 → 分割不能で1チャンク"""
+        text = "あいうえおかきくけこさしすせそ"
+        chunks = talker.split_text_into_chunks(text, chunk_size=10)
+        assert len(chunks) == 1
+        assert chunks[0] == text
+
+    def test_split_exact_boundary(self, talker):
+        """段落結合時の境界値テスト（len(current)+len(para)+2 == chunk_size）"""
+        # 3 + 7 + 2 = 12 == chunk_size → 結合される
+        text = "あああ\n\nいいいいいいい"
+        chunks = talker.split_text_into_chunks(text, chunk_size=12)
+        assert len(chunks) == 1
+        assert chunks[0] == "あああ\n\nいいいいいいい"
+
+    def test_split_multiple_short_paragraphs_merged(self, talker):
+        """短い段落が結合されて1チャンクになる"""
+        text = "あ。\n\nい。\n\nう。"
+        chunks = talker.split_text_into_chunks(text, chunk_size=20)
+        assert len(chunks) == 1
+        assert chunks[0] == "あ。\n\nい。\n\nう。"
+
+    # --- 1-2. get_aozora_text エッジケース ---
+
+    @patch('src.aozora_seika_talker.requests.get')
+    def test_get_aozora_text_no_main_text_div(self, mock_get, talker):
+        """main_text div なし → (None, title, author)"""
+        mock_response = MagicMock()
+        mock_response.text = """
+        <h1 class="title">作品タイトル</h1>
+        <h2 class="author">作者名</h2>
+        <div class="other">本文なし</div>
+        """
+        mock_get.return_value = mock_response
+        text, title, author = talker.get_aozora_text("http://example.com")
+        assert text is None
+        assert title == "作品タイトル"
+        assert author == "作者名"
+
+    @patch('src.aozora_seika_talker.requests.get')
+    def test_get_aozora_text_no_title_no_author(self, mock_get, talker):
+        """タイトル・作者タグなし → デフォルト値"""
+        mock_response = MagicMock()
+        mock_response.text = """
+        <div class="main_text">本文テキスト</div>
+        """
+        mock_get.return_value = mock_response
+        text, title, author = talker.get_aozora_text("http://example.com")
+        assert text is not None
+        assert title == "タイトル不明"
+        assert author == "作者不明"
+
+    @patch('src.aozora_seika_talker.requests.get')
+    def test_get_aozora_text_ruby_without_rb(self, mock_get, talker):
+        """<rb>なしの<ruby> → ruby.textフォールバック"""
+        mock_response = MagicMock()
+        mock_response.text = """
+        <h1 class="title">タイトル</h1>
+        <h2 class="author">作者</h2>
+        <div class="main_text"><ruby>漢字<rt>かんじ</rt></ruby></div>
+        """
+        mock_get.return_value = mock_response
+        text, title, author = talker.get_aozora_text("http://example.com")
+        assert text is not None
+        assert "漢字" in text
+
+    # --- 1-3. speak_text パラメータ付きテスト ---
+
+    @patch('src.aozora_seika_talker.time.sleep')
+    @patch('src.aozora_seika_talker.subprocess.run')
+    def test_speak_text_with_effect(self, mock_run, mock_sleep, talker):
+        """effectパラメータがコマンドに含まれること"""
+        talker.data.voice = "結月ゆかり"
+        talker.voice_dic = {"結月ゆかり": "1"}
+        effect_param = OptionParam()
+        effect_param.set_value(0, 100, 50, 10.0)
+        talker.data.effect["結月ゆかり"]["speed"] = effect_param
+
+        mock_run.return_value.returncode = 0
+        result = talker.speak_text("テスト")
+        assert result is True
+
+        cmd = mock_run.call_args[0][0]
+        assert "-speed" in cmd
+        assert str(50 / 10.0) in cmd
+
+    @patch('src.aozora_seika_talker.time.sleep')
+    @patch('src.aozora_seika_talker.subprocess.run')
+    def test_speak_text_with_emotion(self, mock_run, mock_sleep, talker):
+        """emotionパラメータがコマンドに含まれること"""
+        talker.data.voice = "結月ゆかり"
+        talker.voice_dic = {"結月ゆかり": "1"}
+        emotion_param = OptionParam()
+        emotion_param.set_value(0, 100, 75, 10.0)
+        talker.data.emotion["結月ゆかり"]["happiness"] = emotion_param
+
+        mock_run.return_value.returncode = 0
+        result = talker.speak_text("テスト")
+        assert result is True
+
+        cmd = mock_run.call_args[0][0]
+        assert "-emotion" in cmd
+        assert "happiness" in cmd
+        assert str(75 / 10.0) in cmd
+
+    # --- 1-4. get_voice_params 異常系 ---
+
+    @patch('src.aozora_seika_talker.subprocess.run')
+    def test_get_voice_params_not_in_dic(self, mock_run, talker):
+        """voice_dicにない音声名 → 早期リターン"""
+        mock_run.return_value = MagicMock(stdout="  1 結月ゆかり\n")
+        talker.get_voice_params("存在しない音声")
+        # get_voice_listの1回のみ呼ばれ、paramsの取得は行われない
+        assert mock_run.call_count == 1
+
+    @patch('src.aozora_seika_talker.subprocess.run')
+    def test_get_voice_params_subprocess_error(self, mock_run, talker):
+        """subprocess失敗 → 例外なく終了"""
+        mock_run.side_effect = [
+            MagicMock(stdout="  1 結月ゆかり\n"),
+            subprocess.CalledProcessError(1, ["cmd"])
+        ]
+        # 例外が発生しないことを確認
+        talker.get_voice_params("結月ゆかり")
 
     @patch('src.aozora_seika_talker.subprocess.run')
     def test_get_voice_params_success(self, mock_run, talker, save_data):

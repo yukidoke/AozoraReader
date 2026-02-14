@@ -64,7 +64,7 @@ class DataManager:
         ret.min_val =   (base['min_val'] if 'min_val' in base else None)
         ret.max_val =   (base['max_val'] if 'max_val' in base else None)
         ret.value =     (base['value'] if 'value' in base else None)
-        ret.scale =      (base['step'] if 'step' in base else None)
+        ret.scale =      (base['step'] if 'step' in base else (base['scale'] if 'scale' in base else None))
         return ret
 
     def load_config(self, file_path="config.json"):

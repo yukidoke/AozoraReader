@@ -98,6 +98,105 @@ def test_load_config_file_not_found(data_manager):
     assert data_manager.data.chunk_size == 100
     assert data_manager.data.interval == 0.5
 
+# --- 2-1. dict2OptionParam テスト ---
+
+def test_dict2OptionParam_full(data_manager):
+    """全キー揃い → 正しく変換"""
+    d = {"min_val": 0, "max_val": 100, "value": 50, "step": 2.0}
+    param = data_manager.dict2OptionParam(d)
+    assert param.min_val == 0
+    assert param.max_val == 100
+    assert param.value == 50
+    assert param.scale == 2.0
+
+def test_dict2OptionParam_missing_keys(data_manager):
+    """一部キー欠損 → 該当フィールドNone"""
+    d = {"min_val": 0, "value": 50}
+    param = data_manager.dict2OptionParam(d)
+    assert param.min_val == 0
+    assert param.max_val is None
+    assert param.value == 50
+    assert param.scale is None
+
+def test_dict2OptionParam_empty(data_manager):
+    """空辞書 → 全フィールドNone"""
+    param = data_manager.dict2OptionParam({})
+    assert param.min_val is None
+    assert param.max_val is None
+    assert param.value is None
+    assert param.scale is None
+
+# --- 2-2. 異常系・後方互換性テスト ---
+
+def test_load_config_invalid_json(data_manager, tmpdir):
+    """不正JSON → JSONDecodeError"""
+    config_file = tmpdir.join("invalid.json")
+    config_file.write("not valid json {{{")
+    with pytest.raises(json.JSONDecodeError):
+        data_manager.load_config(str(config_file))
+
+def test_load_config_partial(data_manager, tmpdir):
+    """一部キーのみ → デフォルト値で補填"""
+    config_data = {"url": "http://example.com"}
+    config_file = tmpdir.join("partial.json")
+    config_file.write(json.dumps(config_data))
+    data_manager.load_config(str(config_file))
+    assert data_manager.data.url == "http://example.com"
+    assert data_manager.data.file_path is None
+    assert data_manager.data.seika_path == "C:/Program Files/510Product/AssistantSeika"
+    assert data_manager.data.voice is None
+    assert data_manager.data.chunk_size == 100
+    assert data_manager.data.interval == 0.5
+
+def test_load_config_old_format(data_manager, tmpdir):
+    """旧形式（volume_*, speed_*）→ 正しく変換"""
+    config_data = {
+        "voice": "voice1",
+        "volume_min": 0, "volume_max": 100, "volume_val": 50, "volume_step": 1.0,
+        "speed_min": 50, "speed_max": 200, "speed_val": 100, "speed_step": 5.0,
+    }
+    config_file = tmpdir.join("old_format.json")
+    config_file.write(json.dumps(config_data))
+    data_manager.load_config(str(config_file))
+    assert data_manager.data.effect["voice1"]["volume"].min_val == 0
+    assert data_manager.data.effect["voice1"]["volume"].max_val == 100
+    assert data_manager.data.effect["voice1"]["volume"].value == 50
+    assert data_manager.data.effect["voice1"]["volume"].scale == 1.0
+    assert data_manager.data.effect["voice1"]["speed"].min_val == 50
+    assert data_manager.data.effect["voice1"]["speed"].max_val == 200
+    assert data_manager.data.effect["voice1"]["speed"].value == 100
+    assert data_manager.data.effect["voice1"]["speed"].scale == 5.0
+
+# --- 2-3. ラウンドトリップテスト ---
+
+def test_save_load_roundtrip(data_manager, tmpdir):
+    """保存→読込で全データ保持（scale/stepバグ検出）"""
+    data_manager.data.url = "http://example.com/test"
+    data_manager.data.voice = "voice1"
+    data_manager.data.chunk_size = 150
+    data_manager.data.interval = 1.5
+    data_manager.data.effect["voice1"]["volume"].set_value(0, 100, 50, 2.0)
+    data_manager.data.emotion["voice1"]["happy"].set_value(0, 100, 75, 5.0)
+
+    config_file = str(tmpdir.join("roundtrip.json"))
+    data_manager.save_config(config_file)
+
+    dm2 = DataManager()
+    dm2.load_config(config_file)
+
+    assert dm2.data.url == "http://example.com/test"
+    assert dm2.data.voice == "voice1"
+    assert dm2.data.chunk_size == 150
+    assert dm2.data.interval == 1.5
+    assert dm2.data.effect["voice1"]["volume"].min_val == 0
+    assert dm2.data.effect["voice1"]["volume"].max_val == 100
+    assert dm2.data.effect["voice1"]["volume"].value == 50
+    assert dm2.data.effect["voice1"]["volume"].scale == 2.0
+    assert dm2.data.emotion["voice1"]["happy"].min_val == 0
+    assert dm2.data.emotion["voice1"]["happy"].max_val == 100
+    assert dm2.data.emotion["voice1"]["happy"].value == 75
+    assert dm2.data.emotion["voice1"]["happy"].scale == 5.0
+
 def test_save_config(data_manager, tmpdir):
     """save_configが正しく設定を保存できることをテスト"""
     # 設定を変更

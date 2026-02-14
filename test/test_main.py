@@ -1,5 +1,5 @@
 import pytest
-from PySide6.QtWidgets import QApplication, QFileDialog
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 from PySide6.QtCore import Signal, QThread
 from src import main
 from src.config import SaveData
@@ -184,6 +184,48 @@ def test_stop_reading(app, monkeypatch):
     assert window.start_button.isEnabled() == True
     assert window.pause_button.isEnabled() == False
     assert window.stop_button.isEnabled() == False
+
+def test_on_reading_finished(app):
+    """ボタン状態リセット（start有効、pause/stop無効）"""
+    window = main.AozoraReaderGUI()
+    window.start_button.setEnabled(False)
+    window.pause_button.setEnabled(True)
+    window.stop_button.setEnabled(True)
+    window.pause_button.setText("再開")
+
+    window.on_reading_finished()
+
+    assert window.start_button.isEnabled() == True
+    assert window.pause_button.isEnabled() == False
+    assert window.stop_button.isEnabled() == False
+    assert window.pause_button.text() == "一時停止"
+
+def test_on_reading_error(app, monkeypatch):
+    """エラー時のUI状態リセット"""
+    window = main.AozoraReaderGUI()
+    window.start_button.setEnabled(False)
+    window.pause_button.setEnabled(True)
+    window.stop_button.setEnabled(True)
+
+    monkeypatch.setattr(QMessageBox, "critical", lambda *args, **kwargs: None)
+
+    window.on_reading_error("テストエラー")
+
+    assert window.start_button.isEnabled() == True
+    assert window.pause_button.isEnabled() == False
+    assert window.stop_button.isEnabled() == False
+
+def test_update_progress(app):
+    """プログレスバー更新"""
+    window = main.AozoraReaderGUI()
+    window.update_progress(5, 10)
+    assert window.progress_bar.value() == 50
+
+def test_update_current_text(app):
+    """現在テキスト表示更新"""
+    window = main.AozoraReaderGUI()
+    window.update_current_text("テスト表示テキスト")
+    assert window.current_text.toPlainText() == "テスト表示テキスト"
 
 def test_save_load_config(app, monkeypatch):
     """save_configとload_configメソッドのテスト"""
