@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "aozora-reader"
+version = "1.1.1"
+description = "青空文庫からテキストを取得し、合成音声に朗読してもらうためのスクリプト"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "LGPL-3.0-or-later"}
+authors = [
+    {name = "toyoko"},
+]
+keywords = ["aozora", "text-to-speech", "assistant-seika"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: Microsoft :: Windows",
+]
+
+dependencies = [
+    "requests>=2.32.3",
+    "beautifulsoup4>=4.13.3",
+    "PySide6>=6.8.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+aozora-reader = "src.main:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-vv --cov=src --cov-report=html"
+python_files = "test_*.py"
+python_classes = "Test*"
+testpaths = ["test"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/test/*",
+    "*/__pycache__/*",
+    "*/tempCodeRunnerFile.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if __name__ == .__main__.:",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]

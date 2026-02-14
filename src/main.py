@@ -434,8 +434,13 @@ class AozoraReaderGUI(QMainWindow):
         self.data_manager.data.interval = self.chunk_interval.value()
 
 
-if __name__ == "__main__":
+def main():
+    """アプリケーションのエントリーポイント"""
     app = QApplication(sys.argv)
     window = AozoraReaderGUI()
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()

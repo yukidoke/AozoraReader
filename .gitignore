@@ -1,13 +1,35 @@
+# Claude Code
 .claude/
+
+# Virtual environments
 aozora/
+.venv/
+venv/
+env/
+
+# Build artifacts
 build/
 dist/
+*.egg-info/
 
+# Configuration
 config.json
 
+# Python
 __pycache__/
+*.pyc
+*.pyo
+*.pyd
 
+# PyInstaller
 *.spec
-.clinerules
 
+# Testing
 .coverage
+htmlcov/
+.pytest_cache/
+
+# IDE
+.clinerules
+.vscode/
+.idea/
