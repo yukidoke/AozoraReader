@@ -21,7 +21,7 @@ import os
 import re
 import subprocess
 import time
-from config import SaveData
+from src.config import SaveData
 
 class AozoraSeikaTalker:
     def __init__(self, save_data : SaveData, seika_path="C:/Program Files/510Product/AssistantSeika"):

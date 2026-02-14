@@ -11,12 +11,11 @@
 <details>
 <summary> Pythonスクリプトを実行する場合 </summary>
 
-* Python 3.10.6
-* requests 2.32.3
-* beautifulsoup4 4.13.3
-* PySide6 6.8.2.1
+* Python 3.10 以上
+* requests 2.32.3 以上
+* beautifulsoup4 4.13.3 以上
+* PySide6 6.8.0 以上
 
-動作を確認したバージョンです。他のバージョンでも動くかもしれません。
 </details>
 
 # Installation
@@ -28,18 +27,66 @@ Releaseからzipファイルをダウンロードして解凍してください�
 <details>
 <summary> Pythonスクリプトを実行する場合 </summary>
 
-1. このレポジトリをダウンロードしてください。
+## 前提条件
 
-2. [Pythonをインストール](https://www.python.org)してください。
+- [Python 3.10以上](https://www.python.org)をインストールしてください
+- （推奨）[uv](https://docs.astral.sh/uv/)をインストールしてください
 
-3. 以下のコマンドを実行して必要なライブラリをインストールしてください。
+## uvを使用する場合（推奨）
+
+1. このリポジトリをクローンまたはダウンロードしてください
 ```bash
-python -m pip install requests beautifulSoup4 PyQt5
+git clone https://github.com/yourusername/aozora-reader.git
+cd aozora-reader
 ```
 
-4. 以下のコマンドを実行してスクリプト本体を実行してください。
+2. 依存パッケージをインストールして実行してください
 ```bash
-python main.py
+# 依存関係をインストール
+uv sync
+
+# アプリケーションを起動
+uv run aozora-reader
+```
+
+3. テストを実行する場合
+```bash
+# 開発用依存関係を含めてインストール
+uv sync --dev
+
+# テストを実行
+uv run pytest
+```
+
+## pipを使用する場合
+
+1. このリポジトリをクローンまたはダウンロードしてください
+
+2. 仮想環境を作成して有効化してください
+```bash
+python -m venv .venv
+
+# Windows
+.venv\Scripts\activate
+
+# macOS/Linux
+source .venv/bin/activate
+```
+
+3. 依存パッケージをインストールしてください
+```bash
+pip install -e .
+
+# 開発用（テスト実行する場合）
+pip install -e ".[dev]"
+```
+
+4. アプリケーションを起動してください
+```bash
+aozora-reader
+
+# または
+python -m src.main
 ```
 </details>
 

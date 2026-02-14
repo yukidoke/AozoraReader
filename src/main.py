@@ -24,9 +24,9 @@ from PySide6.QtWidgets import (QApplication, QMainWindow, QLabel, QLineEdit,
                             QDoubleSpinBox, QDial)
 from PySide6.QtCore import Slot
 
-from aozora_seika_talker import AozoraSeikaTalker
-from config import DataManager
-from reader_worker import ReaderWorker, FetchWorker
+from src.aozora_seika_talker import AozoraSeikaTalker
+from src.config import DataManager
+from src.reader_worker import ReaderWorker, FetchWorker
 
 class AozoraReaderGUI(QMainWindow):
     def __init__(self):
@@ -434,8 +434,13 @@ class AozoraReaderGUI(QMainWindow):
         self.data_manager.data.interval = self.chunk_interval.value()
 
 
-if __name__ == "__main__":
+def main():
+    """アプリケーションのエントリーポイント"""
     app = QApplication(sys.argv)
     window = AozoraReaderGUI()
     window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
