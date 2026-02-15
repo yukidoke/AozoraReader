@@ -1,8 +1,32 @@
 import pytest
 import json
 import os
-from src.config import DataManager, SaveData, OptionParam
+from src.config import Config, DataManager, SaveData, OptionParam
 from collections import defaultdict
+from pathlib import Path
+
+@pytest.fixture
+def fixtures_dir() -> Path:
+    return Path(__file__).parent / "fixtures"
+
+@pytest.fixture
+def config():
+    return Config()
+
+@pytest.mark.parametrize("file_path, expected", [
+    ("null.json", FileNotFoundError),
+    ("ng001.json", json.JSONDecodeError),
+    ("ok001.json", {"t_bool": False,"t_float": 2.3,"t_array": ["yuki","aozora","seika"]})
+])
+def test_config_path_to_data(file_path : str, expected, fixtures_dir : Path, config):
+    """
+    テストの意図: config.jsonのパスが与えられたとき、それを読み取ってpython objectのデータに変換することを確認する。
+    仕様:
+        - ファイルが存在しないとき、FileNotFoundErrorを返す
+        - ファイルが存在するとき、json to python objを実行する
+        - json to python objに失敗したとき、json.JSONDecodeErrorを返す。
+    """
+    assert config.path_to_data(fixtures_dir / file_path) == expected
 
 @pytest.fixture
 def data_manager():

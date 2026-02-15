@@ -18,7 +18,30 @@ along with AozoraReader. If not, see <https://www.gnu.org/licenses/>.
 import dataclasses
 import json
 import os
+import logging
 from collections import defaultdict
+from pathlib import Path
+
+class Config:
+    logger = None
+    
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+
+    def path_to_data(self, file_path : Path):
+        if os.path.isfile(file_path) == False:
+            self.logger.error("config.json ファイルが見つかりません。")
+            return FileNotFoundError
+        
+        try:
+            with open(file_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except:
+            self.logger.error("config.json ファイルをJSONとしてパースできません。")
+            return json.JSONDecodeError
+
+        self.logger.info("config.json ファイルを読み込みました。")
+        return data
 
 # オプションパラメータ
 @dataclasses.dataclass
