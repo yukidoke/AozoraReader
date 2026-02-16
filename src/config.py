@@ -29,6 +29,7 @@ class Config:
         self.logger = logging.getLogger(__name__)
 
     def path_to_data(self, file_path : Path):
+        """configファイルのパスをもとにpython objectを返す"""
         if os.path.isfile(file_path) == False:
             self.logger.error("config.json ファイルが見つかりません。")
             return FileNotFoundError
@@ -44,6 +45,7 @@ class Config:
         return data
     
     def update_data_version(self, data):
+        """設定が保存されたpython objectを一つ新しいバージョンへ変換する"""
         # v1.0.0 to v2.0.0
         if "url" in data and "file_path" in data and "seika_path" in data and "voice" in data and "chunk_size" in data and "speed_step" in data and "speed_min" in data and "speed_max" in data and "speed_val" in data and "volume_step" in data and "volume_min" in data and "volume_max" in data and "volume_val" in data:
             tmp = {
@@ -56,6 +58,7 @@ class Config:
                 "effect": {},
                 "emotion": {}
             }
+            self.logger.info("設定をv1.0.0からv2.0.0へ変換しました。")
             return (tmp, False)
 
         # v2.0.0 to v2.1.0
@@ -76,6 +79,7 @@ class Config:
                     "basec_password": "SeikaServerPassword"
                 }
             }
+            self.logger.info("設定をv2.0.0からv2.1.0へ変換しました。")
             return (tmp, True)
 
         # v2.1.0
@@ -99,6 +103,7 @@ class Config:
                 "basec_password": "SeikaServerPassword"
             }
         }
+        self.logger.warning("設定を正しく読み込めなかったため、デフォルトへリセットしました。")
         return (data, True)
 
 # オプションパラメータ
