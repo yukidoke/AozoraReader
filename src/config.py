@@ -42,6 +42,64 @@ class Config:
 
         self.logger.info("config.json ファイルを読み込みました。")
         return data
+    
+    def update_data_version(self, data):
+        # v1.0.0 to v2.0.0
+        if "url" in data and "file_path" in data and "seika_path" in data and "voice" in data and "chunk_size" in data and "speed_step" in data and "speed_min" in data and "speed_max" in data and "speed_val" in data and "volume_step" in data and "volume_min" in data and "volume_max" in data and "volume_val" in data:
+            tmp = {
+                "url": data["url"],
+                "file_path": data["file_path"],
+                "seika_path": data["seika_path"],
+                "voice": data["voice"],
+                "chunk_size": data["chunk_size"],
+                "interval": 1.0,
+                "effect": {},
+                "emotion": {}
+            }
+            return (tmp, False)
+
+        # v2.0.0 to v2.1.0
+        if "url" in data and "file_path" in data and "seika_path" in data and "voice" in data and "chunk_size" in data and "interval" in data and "effect" in data and "emotion" in data:
+            tmp = {
+                "config_version": "v2.1.0",
+                "url": data["url"],
+                "file_path": data["file_path"],
+                "main_voice": None,
+                "sub_voice": None,
+                "chunk_size": data["chunk_size"],
+                "interval": data["interval"],
+                "parameters": {},
+                "http_settings": {
+                    "address": "localhost",
+                    "port": 7180,
+                    "basic_userid": "SeikaServerUser",
+                    "basec_password": "SeikaServerPassword"
+                }
+            }
+            return (tmp, True)
+
+        # v2.1.0
+        if "config_version" in data and data["config_version"] == "v2.1.0":
+            return (data, True)
+        
+        # default
+        data = {
+            "config_version": "v2.1.0",
+            "url": None,
+            "file_path": None,
+            "main_voice": None,
+            "sub_voice": None,
+            "chunk_size": 100,
+            "interval": 1.0,
+            "parameters": {},
+            "http_settings": {
+                "address": "localhost",
+                "port": 7180,
+                "basic_userid": "SeikaServerUser",
+                "basec_password": "SeikaServerPassword"
+            }
+        }
+        return (data, True)
 
 # オプションパラメータ
 @dataclasses.dataclass

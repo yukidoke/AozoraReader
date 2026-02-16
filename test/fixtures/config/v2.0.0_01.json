@@ -1,0 +1,80 @@
+{
+    "url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html",
+    "file_path": "D:/sandbox/AozoraReader/クソデカ羅生門.txt",
+    "seika_path": "D:\\sandbox\\AozoraReader\\assistantseika20250113a\\SeikaSay2",
+    "voice": "すずきつづみ  - CeVIOAI(64)",
+    "chunk_size": 100,
+    "interval": 0.0,
+    "effect": {
+        "": {},
+        "結月ゆかり": {},
+        "すずきつづみ  - CeVIOAI(64)": {
+            "volume": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 50,
+                "scale": 1.0
+            },
+            "speed": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 65,
+                "scale": 1.0
+            },
+            "pitch": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 50,
+                "scale": 1.0
+            },
+            "alpha": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 50,
+                "scale": 1.0
+            },
+            "intonation": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 50,
+                "scale": 1.0
+            }
+        }
+    },
+    "emotion": {
+        "": {},
+        "結月ゆかり": {},
+        "すずきつづみ  - CeVIOAI(64)": {
+            "クール": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 50,
+                "scale": 1.0
+            },
+            "照れ": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 0,
+                "scale": 1.0
+            },
+            "怒り": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 0,
+                "scale": 1.0
+            },
+            "喜び": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 30,
+                "scale": 1.0
+            },
+            "ひそひそ": {
+                "min_val": 0,
+                "max_val": 100,
+                "value": 0,
+                "scale": 1.0
+            }
+        }
+    }
+}

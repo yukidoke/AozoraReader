@@ -111,12 +111,12 @@ configファイルの形式
     "config_version": "v2.1.0",
     "url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html",
     "file_path": null,
-    "main_voice": "すずきつづみ  - CeVIOAI(64)",
-    "sub_voice": "さとうささら  - CeVIOAI(64)",
+    "main_voice": "70021",
+    "sub_voice": "70011",
     "chunk_size": 100,
     "interval": 0.0,
-    "parametors": {
-        "琴葉 茜": {
+    "parameters": {
+        "60011": {
             "effect":{
                 "volume":{"value":1,"min":0.0,"max":2.0,"step":0.01},
                 "speed":{"value":1,"min":0.10,"max":5.0,"step":0.01},
