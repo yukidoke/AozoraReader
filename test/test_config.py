@@ -60,7 +60,7 @@ def test_config_load_config(file_name : str, fixtures_dir : Path, config):
         - 問題があった場合はデフォルトデータへフォールバックする。
     """
     config.data = {}
-    config.load_config(fixtures_dir / file_path)
+    config.load_config(fixtures_dir / file_name)
     assert config.data["config_version"] == "v2.1.0"
 
 

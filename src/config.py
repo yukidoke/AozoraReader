@@ -36,39 +36,14 @@ class OptionParam:
         self.value = value
         self.scale = scale
 
-# ソフトウェア全体の設定
-@dataclasses.dataclass
-class Data:
-    # Config version
-    config_version : str = "v2.1.0"
-
-    # Input params
-    url : str = None
-    file_path : Path = None
-
-    # Reader params
-    main_voice : str = None
-    sub_voice : str = None
-    chunk_size : int = 100
-    interval : float = 1.0
-
-    # Profiles
-    parameters : dict[str, dict[str, dict[str, OptionParam]]] = dataclasses.field(default_factory=lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(OptionParam))))
-
-    # HTTP
-    # http_settings = {
-    #     address : str = "localhost",
-    #     port : int = 7180,
-    #     basic_userid : str = "SeikaServerUser",
-    #     basic_password : str = "SeikaServerPassword"
-    # }
-
 
 class Config:
     logger = None
+    data = None
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
+        self.data = {}
 
     def path_to_data(self, file_path : Path):
         """configファイルのパスをもとにpython objectを返す"""
@@ -143,6 +118,17 @@ class Config:
         }
         self.logger.warning("設定を正しく読み込めなかったため、デフォルトへリセットしました。")
         return (data, True)
+    
+    def load_config(self, file_path : Path):
+        tmp = self.path_to_data(file_path)
+        if tmp == FileNotFoundError or tmp == json.JSONDecodeError:
+            self.data = {}
+        else:
+            self.data = tmp
+
+        self.data, isLatest = self.update_data_version(self.data)
+        while(isLatest == False):
+            self.data, isLatest = self.update_data_version(self.data)
 
 
 
