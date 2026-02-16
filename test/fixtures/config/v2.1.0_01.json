@@ -134,10 +134,8 @@
             }
         }
     },
-    "http_settings": {
-        "address": "192.168.0.1",
-        "port": 8080,
-        "basic_userid": "admin",
-        "basec_password": "pass"
-    }
+    "address": "192.168.0.1",
+    "port": 8080,
+    "basic_userid": "admin",
+    "basec_password": "pass"
 }

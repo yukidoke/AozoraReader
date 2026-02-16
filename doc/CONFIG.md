@@ -132,11 +132,9 @@ configファイルの形式
             }
         }
     },
-    "http_settings": {
-        "address": "localhost",
-        "port": 7180,
-        "basic_userid": "SeikaServerUser",
-        "basec_password": "SeikaServerPassword"
-    }
+    "address": "localhost",
+    "port": 7180,
+    "basic_userid": "SeikaServerUser",
+    "basic_password": "SeikaServerPassword"
 }
 ```

@@ -30,9 +30,9 @@ def test_config_path_to_data(file_path : str, expected, fixtures_dir : Path, con
 
 @pytest.mark.parametrize("file_name, expected", [
     ("v1.0.0_01.json",({"url": "https://www.aozora.gr.jp/cards/000879/files/127_15260.html","file_path": "D:/sandbox/AozoraReader/クソデカ羅生門.txt","seika_path": "D:\\sandbox\\AozoraReader\\assistantseika20250113a\\SeikaSay2","voice": "すずきつづみ  - CeVIOAI(64)","chunk_size": 100,"interval": 1.0,"effect": {},"emotion": {}},False)),
-    ("v2.0.0_01.json",({"config_version": "v2.1.0","url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html","file_path": "D:/sandbox/AozoraReader/クソデカ羅生門.txt","main_voice": None,"sub_voice": None,"chunk_size": 100,"interval": 0.0,"parameters": {},"http_settings": {"address": "localhost","port": 7180,"basic_userid": "SeikaServerUser","basec_password": "SeikaServerPassword"}},True)),
-    ("v2.1.0_01.json",({"config_version": "v2.1.0","url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html","file_path": "test","main_voice": "60011","sub_voice": "70021","chunk_size": 101,"interval": 1.0,"parameters": {"60011": {"effect": {"volume": {"value": 1,"min": 0.0,"max": 2.0,"step": 0.01},"speed": {"value": 1,"min": 0.10,"max": 5.0,"step": 0.01},"pitch": {"value": 1,"min": 0.10,"max": 5.0,"step": 0.01},"intonation": {"value": 1,"min": 0.0,"max": 5.0,"step": 0.01},"shortpause": {"value": 150,"min": 80.0,"max": 500.0,"step": 1.00},"longpause": {"value": 370,"min": 80.0,"max": 2000.0,"step": 1.00}},"emotion": {"喜び": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01},"怒り": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01},"悲しみ": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01}}},"70021": {"effect": {"volume": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"speed": {"min_val": 0,"max_val": 100,"value": 65,"scale": 1.0},"pitch": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"alpha": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"intonation": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0}},"emotion": {"クール": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"照れ": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0},"怒り": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0},"喜び": {"min_val": 0,"max_val": 100,"value": 30,"scale": 1.0},"ひそひそ": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0}}}},"http_settings": {"address": "192.168.0.1","port": 8080,"basic_userid": "admin","basec_password": "pass"}},True)),
-    ("invalid_01.json",({"config_version": "v2.1.0","url": None,"file_path": None,"main_voice": None,"sub_voice": None,"chunk_size": 100,"interval": 1.0,"parameters": {},"http_settings": {"address": "localhost","port": 7180,"basic_userid": "SeikaServerUser","basec_password": "SeikaServerPassword"}}, True))
+    ("v2.0.0_01.json",({"config_version": "v2.1.0","url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html","file_path": "D:/sandbox/AozoraReader/クソデカ羅生門.txt","main_voice": None,"sub_voice": None,"chunk_size": 100,"interval": 0.0,"parameters": {},"address": "localhost","port": 7180,"basic_userid": "SeikaServerUser","basec_password": "SeikaServerPassword"},True)),
+    ("v2.1.0_01.json",({"config_version": "v2.1.0","url": "https://www.aozora.gr.jp/cards/000081/files/456_15050.html","file_path": "test","main_voice": "60011","sub_voice": "70021","chunk_size": 101,"interval": 1.0,"parameters": {"60011": {"effect": {"volume": {"value": 1,"min": 0.0,"max": 2.0,"step": 0.01},"speed": {"value": 1,"min": 0.10,"max": 5.0,"step": 0.01},"pitch": {"value": 1,"min": 0.10,"max": 5.0,"step": 0.01},"intonation": {"value": 1,"min": 0.0,"max": 5.0,"step": 0.01},"shortpause": {"value": 150,"min": 80.0,"max": 500.0,"step": 1.00},"longpause": {"value": 370,"min": 80.0,"max": 2000.0,"step": 1.00}},"emotion": {"喜び": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01},"怒り": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01},"悲しみ": {"value": 0,"min": 0.00,"max": 1.00,"step": 0.01}}},"70021": {"effect": {"volume": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"speed": {"min_val": 0,"max_val": 100,"value": 65,"scale": 1.0},"pitch": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"alpha": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"intonation": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0}},"emotion": {"クール": {"min_val": 0,"max_val": 100,"value": 50,"scale": 1.0},"照れ": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0},"怒り": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0},"喜び": {"min_val": 0,"max_val": 100,"value": 30,"scale": 1.0},"ひそひそ": {"min_val": 0,"max_val": 100,"value": 0,"scale": 1.0}}}},"address": "192.168.0.1","port": 8080,"basic_userid": "admin","basec_password": "pass"},True)),
+    ("invalid_01.json",({"config_version": "v2.1.0","url": None,"file_path": None,"main_voice": None,"sub_voice": None,"chunk_size": 100,"interval": 1.0,"parameters": {},"address": "localhost","port": 7180,"basic_userid": "SeikaServerUser","basec_password": "SeikaServerPassword"}, True))
 ])
 def test_config_update_data_version(file_name : str, expected, fixtures_dir : Path, config):
     """
@@ -46,6 +46,23 @@ def test_config_update_data_version(file_name : str, expected, fixtures_dir : Pa
     with open(fixtures_dir / "config" / file_name, "r", encoding="utf-8") as f:
         data = json.load(f)
     assert config.update_data_version(data) == expected
+
+@pytest.mark.parametrize("file_name", [
+    ("null.json"),
+    ("ng001.json"),
+    ("ok001.json")
+])
+def test_config_load_config(file_name : str, fixtures_dir : Path, config):
+    """
+    テストの意図: config.jsonのパスが与えられたとき、それを読み取り最新形式まで変換し保持することを確認する
+    仕様:
+        - pathで指定されたファイルをconfigとして読み込む。
+        - 問題があった場合はデフォルトデータへフォールバックする。
+    """
+    config.data = {}
+    config.load_config(fixtures_dir / file_path)
+    assert config.data["config_version"] == "v2.1.0"
+
 
 @pytest.fixture
 def data_manager():

@@ -22,6 +22,48 @@ import logging
 from collections import defaultdict
 from pathlib import Path
 
+# オプションパラメータ
+@dataclasses.dataclass
+class OptionParam:
+    min_val : int = None
+    max_val : int = None
+    value : int = None
+    scale : float = None
+
+    def set_value(self, min : int, max : int, value : int, scale : float):
+        self.min_val = min
+        self.max_val = max
+        self.value = value
+        self.scale = scale
+
+# ソフトウェア全体の設定
+@dataclasses.dataclass
+class Data:
+    # Config version
+    config_version : str = "v2.1.0"
+
+    # Input params
+    url : str = None
+    file_path : Path = None
+
+    # Reader params
+    main_voice : str = None
+    sub_voice : str = None
+    chunk_size : int = 100
+    interval : float = 1.0
+
+    # Profiles
+    parameters : dict[str, dict[str, dict[str, OptionParam]]] = dataclasses.field(default_factory=lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(OptionParam))))
+
+    # HTTP
+    # http_settings = {
+    #     address : str = "localhost",
+    #     port : int = 7180,
+    #     basic_userid : str = "SeikaServerUser",
+    #     basic_password : str = "SeikaServerPassword"
+    # }
+
+
 class Config:
     logger = None
     
@@ -72,12 +114,10 @@ class Config:
                 "chunk_size": data["chunk_size"],
                 "interval": data["interval"],
                 "parameters": {},
-                "http_settings": {
-                    "address": "localhost",
-                    "port": 7180,
-                    "basic_userid": "SeikaServerUser",
-                    "basec_password": "SeikaServerPassword"
-                }
+                "address": "localhost",
+                "port": 7180,
+                "basic_userid": "SeikaServerUser",
+                "basec_password": "SeikaServerPassword"
             }
             self.logger.info("設定をv2.0.0からv2.1.0へ変換しました。")
             return (tmp, True)
@@ -96,29 +136,15 @@ class Config:
             "chunk_size": 100,
             "interval": 1.0,
             "parameters": {},
-            "http_settings": {
-                "address": "localhost",
-                "port": 7180,
-                "basic_userid": "SeikaServerUser",
-                "basec_password": "SeikaServerPassword"
-            }
+            "address": "localhost",
+            "port": 7180,
+            "basic_userid": "SeikaServerUser",
+            "basec_password": "SeikaServerPassword"
         }
         self.logger.warning("設定を正しく読み込めなかったため、デフォルトへリセットしました。")
         return (data, True)
 
-# オプションパラメータ
-@dataclasses.dataclass
-class OptionParam:
-    min_val : int = None
-    max_val : int = None
-    value : int = None
-    scale : float = None
 
-    def set_value(self, min : int, max : int, value : int, scale : float):
-        self.min_val = min
-        self.max_val = max
-        self.value = value
-        self.scale = scale
 
 # ソフトウェア全体の設定
 @dataclasses.dataclass
