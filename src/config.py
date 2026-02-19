@@ -120,6 +120,7 @@ class Config:
         return (data, True)
     
     def load_config(self, file_path : Path):
+        self.logger.info("設定の読み込みを開始します。")
         tmp = self.path_to_data(file_path)
         if tmp == FileNotFoundError or tmp == json.JSONDecodeError:
             self.data = {}
@@ -129,6 +130,7 @@ class Config:
         self.data, isLatest = self.update_data_version(self.data)
         while(isLatest == False):
             self.data, isLatest = self.update_data_version(self.data)
+        self.logger.info("設定を読み込みました。")
 
 
 
